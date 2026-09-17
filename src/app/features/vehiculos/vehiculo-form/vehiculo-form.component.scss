@@ -1,0 +1,134 @@
+.vehiculo-form__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.vehiculo-form__lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h3 {
+    margin-top: 0;
+    color: var(--sigma-black);
+  }
+}
+
+.vehiculo-form__fila {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.vehiculo-form__error {
+  color: var(--sigma-pink-dark);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.vehiculo-form__nota-campo {
+  color: var(--sigma-gray-medium);
+  font-size: 0.78rem;
+}
+
+.vehiculo-form__error-general {
+  background: var(--sigma-pink-light);
+  color: var(--sigma-pink-dark);
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--sigma-radius-sm);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  border-left: 3px solid var(--sigma-pink-dark);
+}
+
+.vehiculo-form__acciones {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sigma-gray-light);
+}
+
+.vehiculo-form__nota {
+  color: var(--sigma-gray-medium);
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.vehiculo-form__resultado {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sigma-gray-light);
+  font-size: 0.875rem;
+
+  p {
+    margin: 0.4rem 0;
+    line-height: 1.5;
+  }
+}
+
+.vehiculo-form__relacionados {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.vehiculo-form__seccion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.vehiculo-form__seccion-acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vehiculo-form__vacio {
+  color: var(--sigma-gray-medium);
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.alertas__select-estado {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--sigma-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px solid var(--sigma-gray);
+
+  &--verde {
+    background: var(--sigma-lime-light);
+    color: var(--sigma-lime-dark);
+    border-color: var(--sigma-lime);
+  }
+
+  &--rojo {
+    background: var(--sigma-pink-light);
+    color: var(--sigma-pink-dark);
+    border-color: var(--sigma-pink);
+  }
+
+  &--amarillo {
+    background: var(--sigma-orange-light);
+    color: var(--sigma-orange-dark);
+    border-color: var(--sigma-orange);
+  }
+}
+
+@media (max-width: 900px) {
+  .vehiculo-form__grid,
+  .vehiculo-form__fila {
+    grid-template-columns: 1fr;
+  }
+}

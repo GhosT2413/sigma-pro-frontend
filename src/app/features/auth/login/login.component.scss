@@ -1,0 +1,98 @@
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sigma-black);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(110, 231, 183, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(255, 128, 0, 0.06) 0%, transparent 50%);
+    animation: login-glow 8s ease-in-out infinite alternate;
+  }
+
+  &__card {
+    width: 420px;
+    max-width: 92vw;
+    padding: 2.5rem;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(110, 231, 183, 0.15);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.25rem;
+
+    span {
+      color: var(--sigma-orange);
+    }
+  }
+
+  &__subtitulo {
+    color: var(--sigma-gray-medium);
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+    line-height: 1.4;
+  }
+
+  &__submit {
+    width: 100%;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  &__error {
+    background: var(--sigma-pink-light);
+    color: var(--sigma-pink-dark);
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--sigma-radius-sm);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--sigma-pink-dark);
+  }
+
+  &__error-campo {
+    color: var(--sigma-pink-dark);
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  &__register-link {
+    text-align: center;
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--sigma-gray-medium);
+
+    a {
+      color: var(--sigma-mint-dark);
+      font-weight: 600;
+      &:hover { color: var(--sigma-orange); }
+    }
+  }
+}
+
+@keyframes login-glow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(3deg); }
+}
+
+@media (max-width: 480px) {
+  .login__card {
+    padding: 1.75rem;
+  }
+}

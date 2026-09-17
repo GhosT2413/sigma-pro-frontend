@@ -1,0 +1,43 @@
+<h2>Usuarios del sistema</h2>
+<p class="usuarios__subtitulo">Gestión global de usuarios y roles (RF-01/RF-17).</p>
+
+@if (cargando()) {
+  <p>Cargando usuarios…</p>
+} @else {
+  <table class="sigma-table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of usuarios(); track u.id) {
+        <tr>
+          <td>{{ u.nombreCompleto }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.telefono ?? '—' }}</td>
+          <td>{{ roleLabels[u.rol] ?? u.rol }}</td>
+          <td>
+            <span class="sigma-badge" [ngClass]="u.activo ? 'sigma-badge--verde' : 'sigma-badge--rojo'">
+              {{ u.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>
+            <button class="sigma-btn sigma-btn--outline" (click)="cambiarEstado(u)">
+              {{ u.activo ? 'Desactivar' : 'Activar' }}
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6">No hay usuarios registrados.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

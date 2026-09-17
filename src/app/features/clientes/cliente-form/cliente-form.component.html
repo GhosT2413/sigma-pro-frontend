@@ -1,0 +1,38 @@
+<h2>{{ clienteId() ? 'Editar cliente' : 'Nuevo cliente' }}</h2>
+
+@if (cargando()) {
+  <p>Cargando cliente…</p>
+} @else {
+  <form class="sigma-card cliente-form" [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="sigma-form-field">
+      <label for="nombre_completo">Nombre completo</label>
+      <input id="nombre_completo" formControlName="nombre_completo" />
+    </div>
+
+    <div class="cliente-form__fila">
+      <div class="sigma-form-field">
+        <label for="rut">RUT</label>
+        <input id="rut" formControlName="rut" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="telefono">Teléfono</label>
+        <input id="telefono" formControlName="telefono" />
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="cliente-form__error">{{ error() }}</div>
+    }
+
+    <div class="cliente-form__acciones">
+      <a routerLink="/clientes" class="sigma-btn sigma-btn--outline">Cancelar</a>
+      <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : clienteId() ? 'Guardar cambios' : 'Crear cliente' }}
+      </button>
+    </div>
+  </form>
+}

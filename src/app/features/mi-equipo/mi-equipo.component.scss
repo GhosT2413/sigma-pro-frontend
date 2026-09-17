@@ -1,0 +1,25 @@
+.mi-equipo {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 { margin: 0; }
+  }
+
+  &__subtitulo {
+    color: var(--sigma-gray-medium);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  &__aviso {
+    background: var(--sigma-orange-light);
+    color: var(--sigma-orange-dark);
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--sigma-radius-sm);
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+    border-left: 3px solid var(--sigma-orange);
+  }
+}

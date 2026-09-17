@@ -1,0 +1,71 @@
+<h2>{{ esCliente() ? 'Mis alertas' : 'Alertas' }}</h2>
+
+<div class="alertas__filtros">
+  <button class="sigma-btn" [class.sigma-btn--primary]="!filtroEstado()" (click)="filtrarPor(null)">Todas</button>
+  <button class="sigma-btn sigma-badge--rojo" (click)="filtrarPor('PENDIENTE')">Pendientes</button>
+  <button class="sigma-btn sigma-badge--verde" (click)="filtrarPor('ATENDIDA')">Atendidas</button>
+  <button class="sigma-btn sigma-badge--amarillo" (click)="filtrarPor('CANCELADA')">Canceladas</button>
+</div>
+
+@if (cargando()) {
+  <p>Cargando alertas…</p>
+} @else {
+  <table class="sigma-table">
+    <thead>
+      <tr>
+        <th>Vehículo</th>
+        <th>Tipo</th>
+        <th>Descripción</th>
+        <th>Km objetivo</th>
+        <th>Fecha objetivo</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of alertas(); track a.id) {
+        <tr>
+          <td><a [routerLink]="['/vehiculos', a.vehiculoId, 'editar']">Ver vehículo #{{ a.vehiculoId }}</a></td>
+          <td>
+            <span class="sigma-badge" [ngClass]="a.tipo === 'ROJO' ? 'sigma-badge--rojo' : 'sigma-badge--amarillo'">
+              {{ a.tipo }}
+            </span>
+          </td>
+          <td>{{ a.descripcion }}</td>
+          <td>{{ a.kilometrajeObjetivo ? (a.kilometrajeObjetivo | number) + ' km' : '—' }}</td>
+          <td>{{ a.fechaObjetivo ? (a.fechaObjetivo | date: 'dd-MM-yyyy') : '—' }}</td>
+          <td>
+            @if (puedeGestionar()) {
+              <select
+                class="alertas__select-estado"
+                [ngClass]="{
+                  'alertas__select-estado--verde': a.estado === 'ATENDIDA',
+                  'alertas__select-estado--rojo': a.estado === 'PENDIENTE',
+                  'alertas__select-estado--amarillo': a.estado === 'CANCELADA'
+                }"
+                [disabled]="guardandoId() === a.id"
+                [value]="a.estado"
+                (change)="cambiarEstado(a, $any($event.target).value)"
+              >
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="ATENDIDA">Atendida</option>
+                <option value="CANCELADA">Cancelada</option>
+              </select>
+            } @else {
+              <span
+                class="sigma-badge"
+                [class.sigma-badge--verde]="a.estado === 'ATENDIDA'"
+                [class.sigma-badge--rojo]="a.estado === 'PENDIENTE'"
+              >
+                {{ a.estado }}
+              </span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6">No hay alertas para este filtro.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

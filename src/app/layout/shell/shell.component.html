@@ -1,0 +1,10 @@
+<div class="shell">
+  <sigma-sidebar #sidebar />
+  <div class="shell__contenido">
+    <sigma-topbar (toggleMenu)="sidebar.abrir()" />
+    <main class="shell__main">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+<div class="shell__overlay" [class.shell__overlay--visible]="sidebar.abierto()" (click)="sidebar.cerrar()"></div>

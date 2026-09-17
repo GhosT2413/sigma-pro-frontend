@@ -1,0 +1,17 @@
+.usuarios {
+  &__subtitulo {
+    color: var(--sigma-gray-medium);
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  &__aviso {
+    background: var(--sigma-orange-light);
+    color: var(--sigma-orange-dark);
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--sigma-radius-sm);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--sigma-orange);
+  }
+}

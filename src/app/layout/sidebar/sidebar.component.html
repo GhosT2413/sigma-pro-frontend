@@ -1,0 +1,14 @@
+<aside class="sidebar" [class.sidebar--open]="abierto()">
+  <div class="sidebar__header">
+    <div class="sidebar__logo">SIGMA <span>Pro</span></div>
+    <button class="sidebar__cerrar" (click)="cerrar()">✕</button>
+  </div>
+  <nav class="sidebar__nav">
+    @for (item of itemsVisibles(); track item.ruta) {
+      <a [routerLink]="item.ruta" routerLinkActive="activo" class="sidebar__link" (click)="cerrar()">
+        <span class="sidebar__icono">{{ item.icono }}</span>
+        {{ item.etiqueta }}
+      </a>
+    }
+  </nav>
+</aside>

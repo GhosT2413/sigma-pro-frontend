@@ -1,0 +1,56 @@
+<div class="register">
+  <form class="register__card sigma-card" [formGroup]="form" (ngSubmit)="enviar()">
+    <h1>SIGMA <span>Pro</span></h1>
+    <p class="register__subtitulo">Crea tu cuenta para comenzar</p>
+
+    <div class="sigma-form-field">
+      <label for="nombre_completo">Nombre completo</label>
+      <input id="nombre_completo" formControlName="nombre_completo" placeholder="Juan Pérez" autocomplete="name" />
+      @if (form.controls.nombre_completo.touched && form.controls.nombre_completo.invalid) {
+        <small class="register__error-campo">Ingresa tu nombre (mínimo 2 caracteres).</small>
+      }
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="email">Correo electrónico</label>
+      <input id="email" type="email" formControlName="email" placeholder="tu@correo.cl" autocomplete="email" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small class="register__error-campo">Ingresa un correo válido.</small>
+      }
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="password">Contraseña</label>
+      <input id="password" type="password" formControlName="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="register__error-campo">La contraseña debe tener al menos 6 caracteres.</small>
+      }
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="telefono">Teléfono (opcional)</label>
+      <input id="telefono" type="tel" formControlName="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" />
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="role_id">¿Cómo te identificas?</label>
+      <select id="role_id" formControlName="role_id">
+        @for (rol of roles; track rol.id) {
+          <option [value]="rol.id">{{ rol.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (error()) {
+      <div class="register__error">{{ error() }}</div>
+    }
+
+    <button type="submit" class="sigma-btn sigma-btn--primary register__submit" [disabled]="cargando()">
+      {{ cargando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+    </button>
+
+    <p class="register__login-link">
+      ¿Ya tienes una cuenta? <a routerLink="/login">Iniciar sesión</a>
+    </p>
+  </form>
+</div>

@@ -1,0 +1,91 @@
+.alertas {
+  &__filtros {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.45rem 1.1rem;
+      font-weight: 600;
+      font-size: 0.82rem;
+      transition: all var(--sigma-transition);
+      background: var(--sigma-white);
+      color: var(--sigma-black);
+      border: 1.5px solid var(--sigma-gray);
+
+      &:hover {
+        border-color: var(--sigma-mint);
+        background: var(--sigma-mint-light);
+      }
+
+      &.sigma-btn--primary {
+        background: var(--sigma-mint);
+        color: var(--sigma-black);
+        border-color: var(--sigma-mint);
+        box-shadow: 0 2px 8px rgba(110, 231, 183, 0.3);
+      }
+
+      &.sigma-badge--rojo {
+        background: var(--sigma-pink-light);
+        color: var(--sigma-pink-dark);
+        border-color: var(--sigma-pink);
+
+        &:hover {
+          background: var(--sigma-pink);
+          color: var(--sigma-white);
+        }
+      }
+
+      &.sigma-badge--verde {
+        background: var(--sigma-lime-light);
+        color: var(--sigma-lime-dark);
+        border-color: var(--sigma-lime);
+
+        &:hover {
+          background: var(--sigma-lime);
+          color: var(--sigma-black);
+        }
+      }
+
+      &.sigma-badge--amarillo {
+        background: var(--sigma-orange-light);
+        color: var(--sigma-orange-dark);
+        border-color: var(--sigma-orange);
+
+        &:hover {
+          background: var(--sigma-orange);
+          color: var(--sigma-white);
+        }
+      }
+    }
+  }
+
+  &__select-estado {
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--sigma-radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1.5px solid var(--sigma-gray);
+
+    &--verde {
+      background: var(--sigma-lime-light);
+      color: var(--sigma-lime-dark);
+      border-color: var(--sigma-lime);
+    }
+
+    &--rojo {
+      background: var(--sigma-pink-light);
+      color: var(--sigma-pink-dark);
+      border-color: var(--sigma-pink);
+    }
+
+    &--amarillo {
+      background: var(--sigma-orange-light);
+      color: var(--sigma-orange-dark);
+      border-color: var(--sigma-orange);
+    }
+  }
+}

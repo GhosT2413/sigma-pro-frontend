@@ -1,0 +1,100 @@
+<h2>{{ fichaId() ? 'Editar ficha de mantención' : 'Nueva ficha de mantención' }}</h2>
+
+@if (cargando()) {
+  <p>Cargando ficha…</p>
+} @else {
+<form class="sigma-card mantencion-form" [formGroup]="form" (ngSubmit)="guardar()">
+  <div class="mantencion-form__fila">
+    <div class="sigma-form-field">
+      <label for="vehiculo_id">ID Vehículo</label>
+      <input id="vehiculo_id" type="number" formControlName="vehiculo_id" />
+    </div>
+    <div class="sigma-form-field">
+      <label for="taller_id">ID Taller (opcional)</label>
+      <input id="taller_id" type="number" formControlName="taller_id" />
+    </div>
+    <div class="sigma-form-field">
+      <label for="mecanico_id">ID Mecánico (opcional)</label>
+      <input id="mecanico_id" type="number" formControlName="mecanico_id" />
+    </div>
+  </div>
+
+  <div class="mantencion-form__fila">
+    <div class="sigma-form-field">
+      <label for="kilometraje_ingreso">Kilometraje de ingreso</label>
+      <input id="kilometraje_ingreso" type="number" formControlName="kilometraje_ingreso" />
+    </div>
+    <div class="sigma-form-field">
+      <label for="kilometraje_salida">Kilometraje de salida (opcional)</label>
+      <input id="kilometraje_salida" type="number" formControlName="kilometraje_salida" />
+    </div>
+    <div class="sigma-form-field">
+      <label for="estado">Estado</label>
+      <select id="estado" formControlName="estado">
+        <option value="EN_ESPERA">En espera</option>
+        <option value="EN_MANTENIMIENTO">En mantenimiento</option>
+        <option value="LISTO">Listo</option>
+        <option value="CANCELADO">Cancelado</option>
+      </select>
+    </div>
+  </div>
+
+  @if (form.controls.estado.value === 'LISTO') {
+    <p class="mantencion-form__nota">
+      ℹ️ Al guardar como "Listo", tu backend actualiza automáticamente el kilometraje del
+      vehículo usando el <strong>kilometraje de ingreso</strong> (así está su lógica hoy en
+      <code>fichas.service.ts</code>, no el de salida).
+    </p>
+  }
+
+  <div class="mantencion-form__fila">
+    <div class="sigma-form-field">
+      <label for="horas_trabajadas">Horas trabajadas</label>
+      <input id="horas_trabajadas" type="number" formControlName="horas_trabajadas" />
+    </div>
+    <div class="sigma-form-field">
+      <label for="valor_hora">Valor por hora</label>
+      <input id="valor_hora" type="number" formControlName="valor_hora" />
+    </div>
+    <div class="sigma-form-field">
+      <label>Costo mano de obra (calculado)</label>
+      <input type="text" [value]="'$' + costoManoObra()" disabled />
+    </div>
+  </div>
+
+  <div class="mantencion-form__fila">
+    <div class="sigma-form-field">
+      <label for="costo_repuestos">Costo total de repuestos</label>
+      <input id="costo_repuestos" type="number" formControlName="costo_repuestos" />
+    </div>
+    <div class="sigma-form-field">
+      <label>Costo total (calculado)</label>
+      <input type="text" [value]="'$' + costoTotal()" disabled />
+    </div>
+  </div>
+
+  <div class="sigma-form-field">
+    <label for="descripcion">Descripción</label>
+    <textarea id="descripcion" formControlName="descripcion" rows="2"></textarea>
+  </div>
+  <div class="sigma-form-field">
+    <label for="diagnostico">Diagnóstico</label>
+    <textarea id="diagnostico" formControlName="diagnostico" rows="2"></textarea>
+  </div>
+  <div class="sigma-form-field">
+    <label for="trabajo_realizado">Trabajo realizado</label>
+    <textarea id="trabajo_realizado" formControlName="trabajo_realizado" rows="2"></textarea>
+  </div>
+
+  @if (error()) {
+    <div class="mantencion-form__error">{{ error() }}</div>
+  }
+
+  <div class="mantencion-form__acciones">
+    <a routerLink="/mantenciones" class="sigma-btn sigma-btn--outline">Cancelar</a>
+    <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : fichaId() ? 'Guardar cambios' : 'Guardar ficha' }}
+    </button>
+  </div>
+</form>
+}

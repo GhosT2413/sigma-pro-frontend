@@ -1,0 +1,51 @@
+<div class="mantenciones__header">
+  <h2>{{ filtroVehiculoId() ? 'Fichas del vehículo #' + filtroVehiculoId() : 'Fichas de mantención' }}</h2>
+  <a routerLink="/mantenciones/nueva" [queryParams]="filtroVehiculoId() ? { vehiculoId: filtroVehiculoId() } : {}" class="sigma-btn sigma-btn--primary">+ Nueva ficha</a>
+</div>
+@if (filtroVehiculoId()) {
+  <a routerLink="/mantenciones" class="mantenciones__volver">← Ver todas las fichas</a>
+}
+
+@if (cargando()) {
+  <p>Cargando fichas…</p>
+} @else {
+  <table class="sigma-table">
+    <thead>
+      <tr>
+        <th>Vehículo</th>
+        <th>Fecha ingreso</th>
+        <th>Km ingreso</th>
+        <th>Estado</th>
+        <th>Costo total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of fichas(); track f.id) {
+        <tr>
+          <td><a [routerLink]="['/vehiculos', f.vehiculoId, 'editar']">Ver vehículo #{{ f.vehiculoId }}</a></td>
+          <td>{{ f.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
+          <td>{{ f.kilometrajeIngreso | number }} km</td>
+          <td>
+            <span
+              class="sigma-badge"
+              [class.sigma-badge--verde]="f.estado === 'LISTO'"
+              [class.sigma-badge--amarillo]="f.estado === 'EN_MANTENIMIENTO'"
+              [class.sigma-badge--rojo]="f.estado === 'CANCELADO'"
+            >
+              {{ f.estado }}
+            </span>
+          </td>
+          <td>${{ f.costoTotal | number: '1.0-0' }}</td>
+          <td>
+            <a [routerLink]="['/mantenciones', f.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6">No hay fichas de mantención registradas.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

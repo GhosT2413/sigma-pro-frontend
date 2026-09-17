@@ -1,0 +1,44 @@
+<div class="mi-equipo__header">
+  <h2>Mi Equipo</h2>
+</div>
+<p class="mi-equipo__subtitulo">Personal técnico (RF-16).</p>
+<p class="mi-equipo__aviso">
+  ⚠️ Hoy <code>GET /usuarios/equipo</code> devuelve, fijo, a los usuarios con <code>role_id = 2</code>
+  (Mecánico Independiente) — todavía no filtra por "tu" taller específico. El botón de agregar mecánico
+  no está conectado porque tampoco hay una ruta pensada para asociar un usuario a un taller en el backend.
+</p>
+
+@if (cargando()) {
+  <p>Cargando equipo…</p>
+} @else {
+  <table class="sigma-table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Rol</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of equipo(); track m.id) {
+        <tr>
+          <td>{{ m.nombreCompleto }}</td>
+          <td>{{ m.email }}</td>
+          <td>{{ m.telefono ?? '—' }}</td>
+          <td>{{ roleLabels[m.rol] ?? m.rol }}</td>
+          <td>
+            <span class="sigma-badge" [ngClass]="m.activo ? 'sigma-badge--verde' : 'sigma-badge--rojo'">
+              {{ m.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5">No hay usuarios con ese rol todavía.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

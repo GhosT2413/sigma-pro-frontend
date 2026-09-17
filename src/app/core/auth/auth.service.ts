@@ -1,0 +1,130 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError, of, switchMap, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  Rol,
+  Usuario,
+  UsuarioBackend,
+  mapUsuarioBackend,
+} from '../models/usuario.model';
+import { decodeJwtPayload } from './jwt.util';
+
+const TOKEN_KEY = 'sigma_pro_token';
+const USER_KEY = 'sigma_pro_usuario';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly usuarioSignal = signal<Usuario | null>(this.leerUsuarioGuardado());
+
+  readonly usuario = this.usuarioSignal.asReadonly();
+  readonly rol = computed<Rol | null>(() => this.usuarioSignal()?.rol ?? null);
+  readonly estaAutenticado = computed(() => !!this.usuarioSignal());
+
+  constructor(
+    private readonly http: HttpClient,
+    private readonly router: Router,
+  ) {}
+
+  login(credenciales: LoginRequest) {
+    // POST /auth/login (auth.controller.ts) solo devuelve { access_token }, sin datos del usuario.
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, credenciales).pipe(
+      tap((res) => localStorage.setItem(TOKEN_KEY, res.access_token)),
+      switchMap((res) => this.cargarPerfil(res.access_token)),
+    );
+  }
+
+  register(datos: RegisterRequest) {
+    // POST /auth/register devuelve { access_token, usuario } con el objeto usuario completo.
+    return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register`, datos).pipe(
+      tap((res) => {
+        localStorage.setItem(TOKEN_KEY, res.access_token);
+        const usuario: Usuario = {
+          id: res.usuario.id,
+          nombreCompleto: res.usuario.nombre_completo,
+          email: res.usuario.email,
+          telefono: res.usuario.telefono,
+          activo: true,
+          rol: res.usuario.role.nombre as Rol,
+          roleId: res.usuario.role.id,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+        this.usuarioSignal.set(usuario);
+      }),
+    );
+  }
+
+  logout(): void {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    this.usuarioSignal.set(null);
+    this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  /**
+   * El JWT trae { sub, email, role } pero no el nombre completo del usuario.
+   * GET /usuarios (JwtAuthGuard, sin filtro por rol) devuelve la lista completa con
+   * la relación `role` incluida, así que buscamos ahí nuestro propio registro por id.
+   * Si por lo que sea falla, igual dejamos la sesión activa con lo que trae el token
+   * (rol correcto, aunque sin nombre completo) para no bloquear el login.
+   */
+  private cargarPerfil(token: string) {
+    const payload = decodeJwtPayload(token);
+
+    if (!payload) {
+      this.logout();
+      throw new Error('Token inválido');
+    }
+
+    return this.http.get<UsuarioBackend[]>(`${environment.apiUrl}/usuarios`).pipe(
+      tap((lista) => {
+        const propio = lista.find((u) => u.id === payload.sub);
+        const usuario: Usuario = propio
+          ? mapUsuarioBackend(propio)
+          : {
+              id: payload.sub,
+              nombreCompleto: payload.email,
+              email: payload.email,
+              activo: true,
+              rol: payload.role as Rol,
+              roleId: 0,
+            };
+        localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+        this.usuarioSignal.set(usuario);
+      }),
+      catchError(() => {
+        // Fallback: si GET /usuarios falla, igual arrancamos sesión solo con lo del token.
+        const usuario: Usuario = {
+          id: payload.sub,
+          nombreCompleto: payload.email,
+          email: payload.email,
+          activo: true,
+          rol: payload.role as Rol,
+          roleId: 0,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+        this.usuarioSignal.set(usuario);
+        return of(null);
+      }),
+    );
+  }
+
+  private leerUsuarioGuardado(): Usuario | null {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as Usuario;
+    } catch {
+      return null;
+    }
+  }
+}

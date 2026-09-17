@@ -1,0 +1,39 @@
+<div class="clientes__header">
+  <h2>Clientes</h2>
+  <a routerLink="/clientes/nuevo" class="sigma-btn sigma-btn--primary">+ Nuevo cliente</a>
+</div>
+
+@if (cargando()) {
+  <p>Cargando clientes…</p>
+} @else {
+  <table class="sigma-table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>RUT</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of clientes(); track c.id) {
+        <tr>
+          <td>{{ c.nombreCompleto }}</td>
+          <td>{{ c.rut ?? '—' }}</td>
+          <td>{{ c.email ?? '—' }}</td>
+          <td>{{ c.telefono ?? '—' }}</td>
+          <td class="clientes__acciones">
+            <a [routerLink]="['/vehiculos']" [queryParams]="{ clienteId: c.id }" class="sigma-btn sigma-btn--outline">Ver vehículos</a>
+            <a [routerLink]="['/clientes', c.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
+            <button class="sigma-btn sigma-btn--danger" (click)="eliminar(c)">Eliminar</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5">No hay clientes registrados.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
