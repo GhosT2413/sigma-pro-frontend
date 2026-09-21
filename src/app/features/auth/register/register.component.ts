@@ -22,8 +22,7 @@ export class RegisterComponent {
   readonly roles = [
     { id: 1, label: 'Cliente' },
     { id: 2, label: 'Mecánico Independiente' },
-    { id: 3, label: 'Taller' },
-    { id: 4, label: 'Administrador' },
+    { id: 3, label: 'Taller Mecánico' },
   ];
 
   readonly form = this.fb.nonNullable.group({
@@ -32,9 +31,49 @@ export class RegisterComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
     telefono: [''],
     role_id: [1, Validators.required],
+    hasAcceptedTerms: [false, Validators.requiredTrue],
+    // Taller
+    rut_empresa: [''],
+    patente_comercial: [''],
+    representante_legal: [''],
   });
 
-  enviar(): void {
+  readonly archivos = signal<{
+    cedula_frente: File | null;
+    cedula_reverso: File | null;
+    certificado_antecedentes: File | null;
+    comprobante_domicilio: File | null;
+  }>({
+    cedula_frente: null,
+    cedula_reverso: null,
+    certificado_antecedentes: null,
+    comprobante_domicilio: null,
+  });
+
+  get roleId(): number {
+    return Number(this.form.get('role_id')?.value);
+  }
+
+  onArchivoSeleccionado(campo: 'cedula_frente' | 'cedula_reverso' | 'certificado_antecedentes' | 'comprobante_domicilio', event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.archivos.update(a => ({ ...a, [campo]: file }));
+  }
+
+  eliminarArchivo(campo: 'cedula_frente' | 'cedula_reverso' | 'certificado_antecedentes' | 'comprobante_domicilio'): void {
+    this.archivos.update(a => ({ ...a, [campo]: null }));
+  }
+
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
+  async enviar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -43,17 +82,54 @@ export class RegisterComponent {
     this.cargando.set(true);
     this.error.set(null);
 
-    const raw = this.form.getRawValue();
+    try {
+      const raw = this.form.getRawValue();
+      const roleId = Number(raw.role_id);
+      const arch = this.archivos();
 
-    this.auth
-      .register({
+      // Validación específica por rol en el frontend
+      if (roleId === 2) {
+        if (!arch.cedula_frente || !arch.cedula_reverso || !arch.certificado_antecedentes) {
+          this.cargando.set(false);
+          this.error.set(
+            'Mecánico Independiente requiere: Cédula de Identidad (frente y reverso) y Certificado de Antecedentes.',
+          );
+          return;
+        }
+      } else if (roleId === 3) {
+        if (!raw.rut_empresa || !raw.patente_comercial || !raw.representante_legal) {
+          this.cargando.set(false);
+          this.error.set('Taller Mecánico requiere: RUT, Patente Comercial y Representante Legal.');
+          return;
+        }
+        if (!arch.comprobante_domicilio) {
+          this.cargando.set(false);
+          this.error.set('Taller Mecánico requiere: Comprobante de Domicilio del taller.');
+          return;
+        }
+      }
+
+      const payload: Record<string, unknown> = {
         nombre_completo: raw.nombre_completo,
         email: raw.email,
         password_hash: raw.password,
         telefono: raw.telefono || undefined,
-        role_id: Number(raw.role_id),
-      })
-      .subscribe({
+        role_id: roleId,
+        hasAcceptedTerms: raw.hasAcceptedTerms,
+      };
+
+      if (roleId === 2) {
+        payload['cedula_frente_url'] = await this.fileToBase64(arch.cedula_frente!);
+        payload['cedula_reverso_url'] = await this.fileToBase64(arch.cedula_reverso!);
+        payload['certificado_antecedentes_url'] = await this.fileToBase64(arch.certificado_antecedentes!);
+      } else if (roleId === 3) {
+        payload['rut_empresa'] = raw.rut_empresa;
+        payload['patente_comercial'] = raw.patente_comercial;
+        payload['comprobante_domicilio_url'] = await this.fileToBase64(arch.comprobante_domicilio!);
+        payload['representante_legal'] = raw.representante_legal;
+      }
+
+      this.auth.register(payload as any).subscribe({
         next: () => {
           this.cargando.set(false);
           this.router.navigate(['/dashboard']);
@@ -76,5 +152,9 @@ export class RegisterComponent {
           }
         },
       });
+    } catch {
+      this.cargando.set(false);
+      this.error.set('Error al procesar los archivos. Intenta nuevamente.');
+    }
   }
 }

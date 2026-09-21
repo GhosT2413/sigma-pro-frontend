@@ -53,9 +53,19 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
 export interface CreateUsuarioPayload {
   nombre_completo: string;
   email: string;
-  password_hash: string; // OJO: el backend espera aquí la contraseña EN TEXTO PLANO, la encripta él.
+  password_hash: string;
   telefono?: string;
   role_id: number;
+  hasAcceptedTerms: boolean;
+  // Mecánico Independiente
+  cedula_frente_url?: string;
+  cedula_reverso_url?: string;
+  certificado_antecedentes_url?: string;
+  // Taller
+  rut_empresa?: string;
+  patente_comercial?: string;
+  comprobante_domicilio_url?: string;
+  representante_legal?: string;
 }
 
 export interface LoginRequest {
@@ -74,6 +84,16 @@ export interface RegisterRequest {
   password_hash: string;
   telefono?: string;
   role_id: number;
+  hasAcceptedTerms: boolean;
+  // Mecánico Independiente
+  cedula_frente_url?: string;
+  cedula_reverso_url?: string;
+  certificado_antecedentes_url?: string;
+  // Taller
+  rut_empresa?: string;
+  patente_comercial?: string;
+  comprobante_domicilio_url?: string;
+  representante_legal?: string;
 }
 
 /** POST /auth/register devuelve el token + el objeto usuario completo. */

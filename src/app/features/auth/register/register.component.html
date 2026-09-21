@@ -41,11 +41,104 @@
       </select>
     </div>
 
+    @if (roleId === 2) {
+      <div class="register__docs">
+        <p class="register__docs-title">Documentación requerida</p>
+
+        <div class="sigma-form-field">
+          <label>Cédula de Identidad — Frente</label>
+          <label class="register__file" [class.register__file--loaded]="archivos().cedula_frente">
+            @if (archivos().cedula_frente) {
+              <span class="register__file-name">{{ archivos().cedula_frente!.name }}</span>
+              <button type="button" class="register__file-remove" (click)="eliminarArchivo('cedula_frente')">✕</button>
+            } @else {
+              <span>Seleccionar archivo</span>
+            }
+            <input type="file" accept="image/*" (change)="onArchivoSeleccionado('cedula_frente', $event)" hidden />
+          </label>
+        </div>
+
+        <div class="sigma-form-field">
+          <label>Cédula de Identidad — Reverso</label>
+          <label class="register__file" [class.register__file--loaded]="archivos().cedula_reverso">
+            @if (archivos().cedula_reverso) {
+              <span class="register__file-name">{{ archivos().cedula_reverso!.name }}</span>
+              <button type="button" class="register__file-remove" (click)="eliminarArchivo('cedula_reverso')">✕</button>
+            } @else {
+              <span>Seleccionar archivo</span>
+            }
+            <input type="file" accept="image/*" (change)="onArchivoSeleccionado('cedula_reverso', $event)" hidden />
+          </label>
+        </div>
+
+        <div class="sigma-form-field">
+          <label>Certificado de Antecedentes</label>
+          <label class="register__file" [class.register__file--loaded]="archivos().certificado_antecedentes">
+            @if (archivos().certificado_antecedentes) {
+              <span class="register__file-name">{{ archivos().certificado_antecedentes!.name }}</span>
+              <button type="button" class="register__file-remove" (click)="eliminarArchivo('certificado_antecedentes')">✕</button>
+            } @else {
+              <span>Seleccionar archivo</span>
+            }
+            <input type="file" accept="image/*,.pdf" (change)="onArchivoSeleccionado('certificado_antecedentes', $event)" hidden />
+          </label>
+        </div>
+      </div>
+    }
+
+    @if (roleId === 3) {
+      <div class="register__docs">
+        <p class="register__docs-title">Datos del Taller</p>
+
+        <div class="sigma-form-field">
+          <label for="rut_empresa">RUT / ID Fiscal de la empresa</label>
+          <input id="rut_empresa" formControlName="rut_empresa" placeholder="12.345.678-9" />
+        </div>
+
+        <div class="sigma-form-field">
+          <label for="patente_comercial">Patente Comercial</label>
+          <input id="patente_comercial" formControlName="patente_comercial" placeholder="AB-12-34" />
+        </div>
+
+        <div class="sigma-form-field">
+          <label>Comprobante de Domicilio del Taller</label>
+          <label class="register__file" [class.register__file--loaded]="archivos().comprobante_domicilio">
+            @if (archivos().comprobante_domicilio) {
+              <span class="register__file-name">{{ archivos().comprobante_domicilio!.name }}</span>
+              <button type="button" class="register__file-remove" (click)="eliminarArchivo('comprobante_domicilio')">✕</button>
+            } @else {
+              <span>Seleccionar archivo</span>
+            }
+            <input type="file" accept="image/*,.pdf" (change)="onArchivoSeleccionado('comprobante_domicilio', $event)" hidden />
+          </label>
+        </div>
+
+        <div class="sigma-form-field">
+          <label for="representante_legal">Nombre del Representante Legal</label>
+          <input id="representante_legal" formControlName="representante_legal" placeholder="Nombre completo" />
+        </div>
+      </div>
+    }
+
+    <div class="register__terms">
+      <label class="register__checkbox">
+        <input type="checkbox" formControlName="hasAcceptedTerms" />
+        <span class="register__checkbox-mark"></span>
+        <span class="register__checkbox-text">
+          Acepto los <a href="javascript:void(0)">Términos y Condiciones</a> y la
+          <a href="javascript:void(0)">Política de Privacidad</a>
+        </span>
+      </label>
+      @if (form.controls.hasAcceptedTerms.touched && form.controls.hasAcceptedTerms.invalid) {
+        <small class="register__error-campo">Debes aceptar los Términos y Condiciones.</small>
+      }
+    </div>
+
     @if (error()) {
       <div class="register__error">{{ error() }}</div>
     }
 
-    <button type="submit" class="sigma-btn sigma-btn--primary register__submit" [disabled]="cargando()">
+    <button type="submit" class="sigma-btn sigma-btn--primary register__submit" [disabled]="cargando() || form.controls.hasAcceptedTerms.invalid">
       {{ cargando() ? 'Creando cuenta…' : 'Crear cuenta' }}
     </button>
 

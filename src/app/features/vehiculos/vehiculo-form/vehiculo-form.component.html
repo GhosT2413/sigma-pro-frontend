@@ -1,255 +1,244 @@
 <h2>{{ vehiculoId() ? 'Editar vehículo' : 'Nuevo vehículo' }}</h2>
 
 @if (cargando()) {
-  <p>Cargando vehículo…</p>
+<p>Cargando vehículo…</p>
 } @else {
-  <div class="vehiculo-form__grid">
-    <form class="sigma-card" [formGroup]="form" (ngSubmit)="guardar()">
-      <div class="sigma-form-field">
-        <label for="cliente_id">Cliente propietario</label>
-        @if (esCliente()) {
-          <input id="cliente_id" type="text" [value]="clienteNombre() ?? 'Tu perfil de cliente'" disabled />
-          <small class="vehiculo-form__nota-campo">Este vehículo queda asociado a tu propio perfil — no puedes reasignarlo a otro cliente.</small>
-        } @else {
-          <input id="cliente_id" type="number" formControlName="cliente_id" />
-        }
-      </div>
-
-      @if (esCliente() && errorSinPerfilCliente()) {
-        <div class="vehiculo-form__error-general">
-          No encontramos un perfil de Cliente ligado a tu usuario todavía. Pídele a tu taller que te registre como cliente antes de agregar un vehículo.
-        </div>
+<div class="vehiculo-form__grid">
+  <form class="sigma-card" [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="sigma-form-field">
+      <label for="cliente_id">Cliente propietario</label>
+      @if (esCliente()) {
+      <input id="cliente_id" type="text" [value]="clienteNombre() ?? 'Tu perfil de cliente'" disabled />
+      <small class="vehiculo-form__nota-campo">Este vehículo queda asociado a tu propio perfil — no puedes reasignarlo a
+        otro cliente.</small>
+      } @else {
+      <input id="cliente_id" type="number" formControlName="cliente_id" />
       }
+    </div>
 
-      <div class="sigma-form-field">
-        <label for="patente">Patente</label>
-        <input id="patente" formControlName="patente" placeholder="AA1234 / AAAA12" style="text-transform: uppercase" />
-        @if (form.controls.patente.touched && form.controls.patente.invalid) {
-          <small class="vehiculo-form__error">Formato inválido (ej: AA1234 o AAAA12).</small>
-        }
-      </div>
-
-      <div class="vehiculo-form__fila">
-        <div class="sigma-form-field">
-          <label for="marca">Marca</label>
-          <input id="marca" formControlName="marca" />
-        </div>
-        <div class="sigma-form-field">
-          <label for="modelo">Modelo</label>
-          <input id="modelo" formControlName="modelo" />
-        </div>
-        <div class="sigma-form-field">
-          <label for="anio">Año</label>
-          <input id="anio" type="number" formControlName="anio" />
-        </div>
-      </div>
-
-      <div class="sigma-form-field">
-        <label for="vin">VIN</label>
-        <input id="vin" formControlName="vin" />
-      </div>
-
-      <div class="vehiculo-form__fila">
-        <div class="sigma-form-field">
-          <label for="tipo_uso">Tipo de uso</label>
-          <select id="tipo_uso" formControlName="tipo_uso">
-            <option value="DIARIO">Diario</option>
-            <option value="CARRERA">Carrera</option>
-            <option value="TUNING">Tuning</option>
-            <option value="EXHIBICION">Exhibición</option>
-          </select>
-        </div>
-        <div class="sigma-form-field">
-          <label for="estado">Estado</label>
-          <select id="estado" formControlName="estado">
-            <option value="ACTIVO">Activo</option>
-            <option value="EN_MANTENIMIENTO">En mantenimiento</option>
-            <option value="INACTIVO">Inactivo</option>
-          </select>
-        </div>
-        @if (!vehiculoId()) {
-          <div class="sigma-form-field">
-            <label for="kilometraje_actual">Kilometraje inicial</label>
-            <input id="kilometraje_actual" type="number" formControlName="kilometraje_actual" />
-          </div>
-        }
-      </div>
-
-      @if (error()) {
-        <div class="vehiculo-form__error-general">{{ error() }}</div>
-      }
-
-      <div class="vehiculo-form__acciones">
-        <a routerLink="/vehiculos" class="sigma-btn sigma-btn--outline">Cancelar</a>
-        <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
-          {{ guardando() ? 'Guardando…' : vehiculoId() ? 'Guardar cambios' : 'Crear vehículo' }}
-        </button>
-      </div>
-    </form>
-
-    @if (vehiculoId()) {
-      <aside class="vehiculo-form__lateral">
-        <form class="sigma-card" [formGroup]="formKilometraje" (ngSubmit)="actualizarKilometraje()">
-          <h3>Kilometraje</h3>
-          <p>Actual registrado: <strong>{{ kilometrajeActualRegistrado() | number }} km</strong></p>
-
-          <div class="sigma-form-field">
-            <label for="nuevo_kilometraje">Nuevo kilometraje</label>
-            <input id="nuevo_kilometraje" type="number" formControlName="nuevo_kilometraje" />
-          </div>
-
-          @if (errorKm()) {
-            <div class="vehiculo-form__error-general">{{ errorKm() }}</div>
-          }
-
-          <button type="submit" class="sigma-btn sigma-btn--outline" [disabled]="guardandoKm()">
-            {{ guardandoKm() ? 'Guardando…' : 'Actualizar kilometraje' }}
-          </button>
-        </form>
-
-        <div class="sigma-card vehiculo-form__prediccion">
-          <h3>Predicción IA (Gemini)</h3>
-          <p class="vehiculo-form__nota">Se genera al toque; no hay historial guardado consultable todavía.</p>
-          <button
-            type="button"
-            class="sigma-btn sigma-btn--outline"
-            [disabled]="generandoPrediccion()"
-            (click)="generarPrediccion()"
-          >
-            {{ generandoPrediccion() ? 'Generando…' : 'Generar predicción' }}
-          </button>
-
-          @if (errorPrediccion()) {
-            <p class="vehiculo-form__error">{{ errorPrediccion() }}</p>
-          }
-
-          @if (prediccion(); as p) {
-            <div class="vehiculo-form__resultado">
-              <p><strong>Componente:</strong> {{ p.componente }}</p>
-              <p><strong>Diagnóstico:</strong> {{ p.diagnostico }}</p>
-              <p><strong>Km recomendado:</strong> {{ p.kilometraje_recomendado | number }} km</p>
-              @if (p.probabilidad !== null) {
-                <p><strong>Probabilidad de falla:</strong> {{ p.probabilidad }}</p>
-              }
-            </div>
-          }
-        </div>
-      </aside>
+    @if (esCliente() && errorSinPerfilCliente()) {
+    <div class="vehiculo-form__error-general">
+      No encontramos un perfil de Cliente ligado a tu usuario todavía. Pídele a tu taller que te registre como cliente
+      antes de agregar un vehículo.
+    </div>
     }
-  </div>
+
+    <div class="sigma-form-field">
+      <label for="patente">Patente</label>
+      <input id="patente" formControlName="patente" placeholder="AA1234 / AAAA12" style="text-transform: uppercase" />
+      @if (form.controls.patente.touched && form.controls.patente.invalid) {
+      <small class="vehiculo-form__error">Formato inválido (ej: AA1234 o AAAA12).</small>
+      }
+    </div>
+
+    <div class="vehiculo-form__fila">
+      <div class="sigma-form-field">
+        <label for="marca">Marca</label>
+        <input id="marca" formControlName="marca" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="modelo">Modelo</label>
+        <input id="modelo" formControlName="modelo" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="anio">Año</label>
+        <input id="anio" type="number" formControlName="anio" />
+      </div>
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="vin">VIN</label>
+      <input id="vin" formControlName="vin" />
+    </div>
+
+    <div class="vehiculo-form__fila">
+      <div class="sigma-form-field">
+        <label for="tipo_uso">Tipo de uso</label>
+        <select id="tipo_uso" formControlName="tipo_uso">
+          <option value="DIARIO">Diario</option>
+          <option value="CARRERA">Carrera</option>
+          <option value="TUNING">Tuning</option>
+          <option value="EXHIBICION">Exhibición</option>
+        </select>
+      </div>
+      <div class="sigma-form-field">
+        <label for="estado">Estado</label>
+        <select id="estado" formControlName="estado">
+          <option value="ACTIVO">Activo</option>
+          <option value="EN_MANTENIMIENTO">En mantenimiento</option>
+          <option value="INACTIVO">Inactivo</option>
+        </select>
+      </div>
+      @if (!vehiculoId()) {
+      <div class="sigma-form-field">
+        <label for="kilometraje_actual">Kilometraje</label>
+        <input id="kilometraje_actual" type="number" formControlName="kilometraje_actual" />
+      </div>
+      }
+    </div>
+
+    @if (error()) {
+    <div class="vehiculo-form__error-general">{{ error() }}</div>
+    }
+
+    <div class="vehiculo-form__acciones">
+      <a routerLink="/vehiculos" class="sigma-btn sigma-btn--outline">Cancelar</a>
+      <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : vehiculoId() ? 'Guardar cambios' : 'Crear vehículo' }}
+      </button>
+    </div>
+  </form>
 
   @if (vehiculoId()) {
-    <section class="vehiculo-form__relacionados">
-      <div class="sigma-card">
-        <div class="vehiculo-form__seccion-header">
-          <h3>Alertas de este vehículo</h3>
-        </div>
-        @if (cargandoRelacionados()) {
-          <p>Cargando…</p>
-        } @else if (alertasVehiculo().length === 0) {
-          <p class="vehiculo-form__vacio">Sin alertas registradas para este vehículo.</p>
-        } @else {
-          <table class="sigma-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Descripción</th>
-                <th>Km objetivo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (a of alertasVehiculo(); track a.id) {
-                <tr>
-                  <td>
-                    <span class="sigma-badge" [ngClass]="a.tipo === 'ROJO' ? 'sigma-badge--rojo' : 'sigma-badge--amarillo'">
-                      {{ a.tipo }}
-                    </span>
-                  </td>
-                  <td>{{ a.descripcion }}</td>
-                  <td>{{ a.kilometrajeObjetivo ? (a.kilometrajeObjetivo | number) + ' km' : '—' }}</td>
-                  <td>
-                    @if (esPersonalTaller()) {
-                      <select
-                        class="alertas__select-estado"
-                        [ngClass]="{
+  <aside class="vehiculo-form__lateral">
+    <form class="sigma-card" [formGroup]="formKilometraje" (ngSubmit)="actualizarKilometraje()">
+      <h3>Kilometraje</h3>
+      <p>Actual registrado: <strong>{{ kilometrajeActualRegistrado() | number }} km</strong></p>
+
+      <div class="sigma-form-field">
+        <label for="nuevo_kilometraje">Nuevo kilometraje</label>
+        <input id="nuevo_kilometraje" type="number" formControlName="nuevo_kilometraje" />
+      </div>
+
+      @if (errorKm()) {
+      <div class="vehiculo-form__error-general">{{ errorKm() }}</div>
+      }
+
+      <button type="submit" class="sigma-btn sigma-btn--outline" [disabled]="guardandoKm()">
+        {{ guardandoKm() ? 'Guardando…' : 'Actualizar kilometraje' }}
+      </button>
+    </form>
+
+    <div class="sigma-card vehiculo-form__prediccion">
+      <h3>Predicción IA (Gemini)</h3>
+      <p class="vehiculo-form__nota">Se genera al toque; no hay historial guardado consultable todavía.</p>
+      <button type="button" class="sigma-btn sigma-btn--outline" [disabled]="generandoPrediccion()"
+        (click)="generarPrediccion()">
+        {{ generandoPrediccion() ? 'Generando…' : 'Generar predicción' }}
+      </button>
+
+      @if (errorPrediccion()) {
+      <p class="vehiculo-form__error">{{ errorPrediccion() }}</p>
+      }
+
+      @if (prediccion(); as p) {
+      <div class="vehiculo-form__resultado">
+        <p><strong>Componente:</strong> {{ p.componente }}</p>
+        <p><strong>Diagnóstico:</strong> {{ p.diagnostico }}</p>
+        <p><strong>Km recomendado:</strong> {{ p.kilometraje_recomendado | number }} km</p>
+        @if (p.probabilidad !== null) {
+        <p><strong>Probabilidad de falla:</strong> {{ p.probabilidad }}</p>
+        }
+      </div>
+      }
+    </div>
+  </aside>
+  }
+</div>
+
+@if (vehiculoId()) {
+<section class="vehiculo-form__relacionados">
+  <div class="sigma-card">
+    <div class="vehiculo-form__seccion-header">
+      <h3>Alertas de este vehículo</h3>
+    </div>
+    @if (cargandoRelacionados()) {
+    <p>Cargando…</p>
+    } @else if (alertasVehiculo().length === 0) {
+    <p class="vehiculo-form__vacio">Sin alertas registradas para este vehículo.</p>
+    } @else {
+    <table class="sigma-table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Km objetivo</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of alertasVehiculo(); track a.id) {
+        <tr>
+          <td>
+            <span class="sigma-badge" [ngClass]="a.tipo === 'ROJO' ? 'sigma-badge--rojo' : 'sigma-badge--amarillo'">
+              {{ a.tipo }}
+            </span>
+          </td>
+          <td>{{ a.descripcion }}</td>
+          <td>{{ a.kilometrajeObjetivo ? (a.kilometrajeObjetivo | number) + ' km' : '—' }}</td>
+          <td>
+            @if (esPersonalTaller()) {
+            <select class="alertas__select-estado" [ngClass]="{
                           'alertas__select-estado--verde': a.estado === 'ATENDIDA',
                           'alertas__select-estado--rojo': a.estado === 'PENDIENTE',
                           'alertas__select-estado--amarillo': a.estado === 'CANCELADA'
-                        }"
-                        [disabled]="guardandoAlertaId() === a.id"
-                        [value]="a.estado"
-                        (change)="cambiarEstadoAlerta(a, $any($event.target).value)"
-                      >
-                        <option value="PENDIENTE">Pendiente</option>
-                        <option value="ATENDIDA">Atendida</option>
-                        <option value="CANCELADA">Cancelada</option>
-                      </select>
-                    } @else {
-                      <span
-                        class="sigma-badge"
-                        [class.sigma-badge--verde]="a.estado === 'ATENDIDA'"
-                        [class.sigma-badge--rojo]="a.estado === 'PENDIENTE'"
-                      >
-                        {{ a.estado }}
-                      </span>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                        }" [disabled]="guardandoAlertaId() === a.id" [value]="a.estado"
+              (change)="cambiarEstadoAlerta(a, $any($event.target).value)">
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="ATENDIDA">Atendida</option>
+              <option value="CANCELADA">Cancelada</option>
+            </select>
+            } @else {
+            <span class="sigma-badge" [class.sigma-badge--verde]="a.estado === 'ATENDIDA'"
+              [class.sigma-badge--rojo]="a.estado === 'PENDIENTE'">
+              {{ a.estado }}
+            </span>
+            }
+          </td>
+        </tr>
         }
-      </div>
+      </tbody>
+    </table>
+    }
+  </div>
 
-      @if (esPersonalTaller()) {
-        <div class="sigma-card">
-          <div class="vehiculo-form__seccion-header">
-            <h3>Historial de fichas de mantención</h3>
-            <div class="vehiculo-form__seccion-acciones">
-              <a [routerLink]="['/mantenciones']" [queryParams]="{ vehiculoId: vehiculoId() }" class="sigma-btn sigma-btn--outline">Ver todas</a>
-              <a [routerLink]="['/mantenciones/nueva']" [queryParams]="{ vehiculoId: vehiculoId() }" class="sigma-btn sigma-btn--primary">+ Nueva ficha</a>
-            </div>
-          </div>
-          @if (cargandoRelacionados()) {
-            <p>Cargando…</p>
-          } @else if (fichasVehiculo().length === 0) {
-            <p class="vehiculo-form__vacio">Aún no hay fichas de mantención para este vehículo.</p>
-          } @else {
-            <table class="sigma-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Km ingreso</th>
-                  <th>Estado</th>
-                  <th>Costo total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (f of fichasVehiculo(); track f.id) {
-                  <tr>
-                    <td>{{ f.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
-                    <td>{{ f.kilometrajeIngreso | number }} km</td>
-                    <td>
-                      <span
-                        class="sigma-badge"
-                        [class.sigma-badge--verde]="f.estado === 'LISTO'"
-                        [class.sigma-badge--amarillo]="f.estado === 'EN_MANTENIMIENTO'"
-                        [class.sigma-badge--rojo]="f.estado === 'CANCELADO'"
-                      >
-                        {{ f.estado }}
-                      </span>
-                    </td>
-                    <td>${{ f.costoTotal | number: '1.0-0' }}</td>
-                    <td><a [routerLink]="['/mantenciones', f.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      }
-    </section>
+  @if (esPersonalTaller()) {
+  <div class="sigma-card">
+    <div class="vehiculo-form__seccion-header">
+      <h3>Historial de fichas de mantención</h3>
+      <div class="vehiculo-form__seccion-acciones">
+        <a [routerLink]="['/mantenciones']" [queryParams]="{ vehiculoId: vehiculoId() }"
+          class="sigma-btn sigma-btn--outline">Ver todas</a>
+        <a [routerLink]="['/mantenciones/nueva']" [queryParams]="{ vehiculoId: vehiculoId() }"
+          class="sigma-btn sigma-btn--primary">+ Nueva ficha</a>
+      </div>
+    </div>
+    @if (cargandoRelacionados()) {
+    <p>Cargando…</p>
+    } @else if (fichasVehiculo().length === 0) {
+    <p class="vehiculo-form__vacio">Aún no hay fichas de mantención para este vehículo.</p>
+    } @else {
+    <table class="sigma-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Km ingreso</th>
+          <th>Estado</th>
+          <th>Costo total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of fichasVehiculo(); track f.id) {
+        <tr>
+          <td>{{ f.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
+          <td>{{ f.kilometrajeIngreso | number }} km</td>
+          <td>
+            <span class="sigma-badge" [class.sigma-badge--verde]="f.estado === 'LISTO'"
+              [class.sigma-badge--amarillo]="f.estado === 'EN_MANTENIMIENTO'"
+              [class.sigma-badge--rojo]="f.estado === 'CANCELADO'">
+              {{ f.estado }}
+            </span>
+          </td>
+          <td>${{ f.costoTotal | number: '1.0-0' }}</td>
+          <td><a [routerLink]="['/mantenciones', f.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a></td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
+  </div>
   }
+</section>
+}
 }
