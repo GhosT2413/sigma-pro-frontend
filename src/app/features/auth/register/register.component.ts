@@ -1,13 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
+import { validarRutChileno } from '../../../shared/validators/rut.validator';
+import { LegalModalComponent } from '../../../shared/components/legal-modal/legal-modal.component';
 
 @Component({
   selector: 'sigma-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, RutFormatDirective, LegalModalComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
@@ -16,8 +19,11 @@ export class RegisterComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  @ViewChild(LegalModalComponent) legalModal!: LegalModalComponent;
+
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly terminosAbiertos = signal(false);
 
   readonly roles = [
     { id: 1, label: 'Cliente' },
@@ -32,6 +38,9 @@ export class RegisterComponent {
     telefono: [''],
     role_id: [1, Validators.required],
     hasAcceptedTerms: [false, Validators.requiredTrue],
+    // Cliente fields
+    rut: [''],
+    fecha_nacimiento: [''],
     // Taller
     rut_empresa: [''],
     patente_comercial: [''],
@@ -50,8 +59,61 @@ export class RegisterComponent {
     comprobante_domicilio: null,
   });
 
-  get roleId(): number {
-    return Number(this.form.get('role_id')?.value);
+  // Signal reactivo para role_id
+  readonly roleId = signal(1);
+
+  readonly esCliente = computed(() => this.roleId() === 1);
+
+  readonly edad = computed(() => {
+    const fechaNac = this.form.get('fecha_nacimiento')?.value;
+    if (!fechaNac) return null;
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNac);
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const mes = hoy.getMonth() - nacimiento.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+      edad--;
+    }
+    return edad;
+  });
+
+  readonly mayorDeEdad = computed(() => {
+    const e = this.edad();
+    return e !== null && e >= 17;
+  });
+
+  constructor() {
+    // Actualizar signal roleId cuando cambia el select
+    this.form.get('role_id')!.valueChanges.subscribe((val) => {
+      this.roleId.set(Number(val));
+    });
+
+    // Sincronizar validadores cuando cambia el rol
+    effect(() => {
+      const esCliente = this.esCliente();
+      const rutControl = this.form.get('rut');
+      const fechaControl = this.form.get('fecha_nacimiento');
+
+      if (esCliente) {
+        rutControl?.setValidators([Validators.required, validarRutChileno]);
+        fechaControl?.setValidators([Validators.required]);
+      } else {
+        rutControl?.clearValidators();
+        fechaControl?.clearValidators();
+      }
+      rutControl?.updateValueAndValidity();
+      fechaControl?.updateValueAndValidity();
+    });
+  }
+
+  async abrirTerminos(): Promise<void> {
+    this.terminosAbiertos.set(true);
+    const acepto = await this.legalModal.abrir();
+    this.terminosAbiertos.set(false);
+    if (acepto) {
+      this.form.controls.hasAcceptedTerms.setValue(true);
+      this.form.controls.hasAcceptedTerms.markAsTouched();
+    }
   }
 
   onArchivoSeleccionado(campo: 'cedula_frente' | 'cedula_reverso' | 'certificado_antecedentes' | 'comprobante_domicilio', event: Event): void {
@@ -117,6 +179,12 @@ export class RegisterComponent {
         role_id: roleId,
         hasAcceptedTerms: raw.hasAcceptedTerms,
       };
+
+      // Agregar campos de Cliente
+      if (this.esCliente()) {
+        payload['rut'] = raw.rut?.trim().toUpperCase() || undefined;
+        payload['fecha_nacimiento'] = raw.fecha_nacimiento || undefined;
+      }
 
       if (roleId === 2) {
         payload['cedula_frente_url'] = await this.fileToBase64(arch.cedula_frente!);

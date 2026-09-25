@@ -64,3 +64,23 @@
     &:hover { color: var(--sigma-orange-dark); }
   }
 }
+
+/* Responsive Dashboard */
+@media (max-width: 768px) {
+  .dashboard__cards {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  .dashboard__card {
+    padding: 1.5rem;
+  }
+
+  .dashboard__valor { font-size: 2rem; }
+}
+
+@media (max-width: 480px) {
+  .dashboard__card { padding: 1.25rem; }
+  .dashboard__valor { font-size: 1.75rem; }
+  .dashboard__etiqueta { font-size: 0.8rem; }
+}

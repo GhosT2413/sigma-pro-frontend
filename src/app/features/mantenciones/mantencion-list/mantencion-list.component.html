@@ -1,6 +1,8 @@
 <div class="mantenciones__header">
-  <h2>{{ filtroVehiculoId() ? 'Fichas del vehículo #' + filtroVehiculoId() : 'Fichas de mantención' }}</h2>
-  <a routerLink="/mantenciones/nueva" [queryParams]="filtroVehiculoId() ? { vehiculoId: filtroVehiculoId() } : {}" class="sigma-btn sigma-btn--primary">+ Nueva ficha</a>
+  <h2>{{ filtroVehiculoId() ? 'Fichas del vehículo #' + filtroVehiculoId() : (esCliente() ? 'Mi historial de mantenciones' : 'Fichas de mantención') }}</h2>
+  @if (puedeCrear()) {
+    <a routerLink="/mantenciones/nueva" [queryParams]="filtroVehiculoId() ? { vehiculoId: filtroVehiculoId() } : {}" class="sigma-btn sigma-btn--primary">+ Nueva ficha</a>
+  }
 </div>
 @if (filtroVehiculoId()) {
   <a routerLink="/mantenciones" class="mantenciones__volver">← Ver todas las fichas</a>
@@ -17,16 +19,18 @@
         <th>Km ingreso</th>
         <th>Estado</th>
         <th>Costo total</th>
-        <th></th>
+        @if (puedeCrear()) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
       @for (f of fichas(); track f.id) {
         <tr>
-          <td><a [routerLink]="['/vehiculos', f.vehiculoId, 'editar']">Ver vehículo #{{ f.vehiculoId }}</a></td>
-          <td>{{ f.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
-          <td>{{ f.kilometrajeIngreso | number }} km</td>
-          <td>
+          <td data-label="Vehículo"><a [routerLink]="['/vehiculos', f.vehiculoId, 'editar']">Ver vehículo #{{ f.vehiculoId }}</a></td>
+          <td data-label="Fecha ingreso">{{ f.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
+          <td data-label="Km ingreso">{{ f.kilometrajeIngreso | number }} km</td>
+          <td data-label="Estado">
             <span
               class="sigma-badge"
               [class.sigma-badge--verde]="f.estado === 'LISTO'"
@@ -36,14 +40,34 @@
               {{ f.estado }}
             </span>
           </td>
-          <td>${{ f.costoTotal | number: '1.0-0' }}</td>
-          <td>
-            <a [routerLink]="['/mantenciones', f.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
+          <td data-label="Costo total">${{ f.costoTotal | number: '1.0-0' }}</td>
+          <td data-label="Acciones">
+            @if (puedeCrear()) {
+              <a [routerLink]="['/mantenciones', f.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
+              @if (puedeEliminar()) {
+                <button 
+                  class="sigma-btn sigma-btn--outline sigma-btn--danger" 
+                  [disabled]="eliminandoId() === f.id"
+                  (click)="eliminarFicha(f.id)"
+                >
+                  {{ eliminandoId() === f.id ? 'Eliminando…' : 'Eliminar' }}
+                </button>
+              }
+            } @else {
+              <!-- CLIENTE: solo ver detalles -->
+              <a [routerLink]="['/mantenciones', f.id, 'ver']" class="sigma-btn sigma-btn--outline">Ver ficha</a>
+            }
           </td>
         </tr>
       } @empty {
         <tr>
-          <td colspan="6">No hay fichas de mantención registradas.</td>
+          <td [attr.colspan]="puedeCrear() ? 6 : 5">
+            @if (esCliente()) {
+              No tienes historial de mantenciones aún. Cuando tu taller realice una mantención en tu vehículo, aparecerá aquí.
+            } @else {
+              No hay fichas de mantención registradas.
+            }
+          </td>
         </tr>
       }
     </tbody>

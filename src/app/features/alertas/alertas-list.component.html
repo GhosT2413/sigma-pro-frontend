@@ -24,16 +24,16 @@
     <tbody>
       @for (a of alertas(); track a.id) {
         <tr>
-          <td><a [routerLink]="['/vehiculos', a.vehiculoId, 'editar']">Ver vehículo #{{ a.vehiculoId }}</a></td>
-          <td>
+          <td data-label="Vehículo"><a [routerLink]="['/vehiculos', a.vehiculoId, 'editar']">Ver vehículo #{{ a.vehiculoId }}</a></td>
+          <td data-label="Tipo">
             <span class="sigma-badge" [ngClass]="a.tipo === 'ROJO' ? 'sigma-badge--rojo' : 'sigma-badge--amarillo'">
               {{ a.tipo }}
             </span>
           </td>
-          <td>{{ a.descripcion }}</td>
-          <td>{{ a.kilometrajeObjetivo ? (a.kilometrajeObjetivo | number) + ' km' : '—' }}</td>
-          <td>{{ a.fechaObjetivo ? (a.fechaObjetivo | date: 'dd-MM-yyyy') : '—' }}</td>
-          <td>
+          <td data-label="Descripción">{{ a.descripcion }}</td>
+          <td data-label="Km objetivo">{{ a.kilometrajeObjetivo ? (a.kilometrajeObjetivo | number) + ' km' : '—' }}</td>
+          <td data-label="Fecha objetivo">{{ a.fechaObjetivo ? (a.fechaObjetivo | date: 'dd-MM-yyyy') : '—' }}</td>
+          <td data-label="Estado">
             @if (puedeGestionar()) {
               <select
                 class="alertas__select-estado"

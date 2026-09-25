@@ -4,6 +4,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 
     h2 { margin: 0; }
   }
@@ -11,7 +13,7 @@
   &__volver {
     display: inline-block;
     margin-bottom: 1rem;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     font-weight: 500;
   }
 
@@ -20,7 +22,7 @@
     color: var(--sigma-orange-dark);
     padding: 0.7rem 0.9rem;
     border-radius: var(--sigma-radius-sm);
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     margin-bottom: 1rem;
     border-left: 3px solid var(--sigma-orange);
   }
@@ -28,13 +30,84 @@
   &__acciones {
     display: flex;
     gap: 0.4rem;
+    flex-wrap: wrap;
   }
 }
 
+/* Responsive table cells for actions */
 @media (max-width: 768px) {
   .vehiculos__header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
+
+  .vehiculos__acciones {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .vehiculos__acciones .sigma-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehiculos__acciones {
+    flex-direction: column;
+  }
+
+  .vehiculos__acciones .sigma-btn {
+    width: 100%;
+  }
+}
+
+/* Tablet - horizontal scroll for table */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .vehiculos__table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vehiculos__table-wrapper .sigma-table {
+    min-width: 800px;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1536px) {
+  .vehiculos__header {
+    margin-bottom: 1.5rem;
+  }
+
+  .vehiculos__volver {
+    font-size: var(--text-base);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sigma-table tbody tr {
+    transition: none;
+  }
+}
+
+/* High contrast */
+@media (prefers-contrast: high) {
+  .sigma-table {
+    border: 2px solid var(--sigma-black);
+  }
+
+  .sigma-table th {
+    border-bottom: 2px solid var(--sigma-black);
+  }
+}
+
+/* Print */
+@media print {
+  .vehiculos__header .sigma-btn,
+  .vehiculos__acciones { display: none; }
+  .vehiculos__header { border-bottom: 2px solid #000; padding-bottom: var(--space-sm); }
 }

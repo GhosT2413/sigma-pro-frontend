@@ -13,6 +13,8 @@ import {
   UsuarioBackend,
   mapUsuarioBackend,
 } from '../models/usuario.model';
+import { ClienteService } from '../services/cliente.service';
+import { CreateClientePayload } from '../models/cliente.model';
 import { decodeJwtPayload } from './jwt.util';
 
 const TOKEN_KEY = 'sigma_pro_token';
@@ -29,6 +31,7 @@ export class AuthService {
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
+    private readonly clienteService: ClienteService,
   ) {}
 
   login(credenciales: LoginRequest) {
@@ -41,6 +44,10 @@ export class AuthService {
 
   register(datos: RegisterRequest) {
     // POST /auth/register devuelve { access_token, usuario } con el objeto usuario completo.
+    const esCliente = datos.role_id === 1;
+    const rut = esCliente ? (datos as any).rut : undefined;
+    const fechaNacimiento = esCliente ? (datos as any).fecha_nacimiento : undefined;
+
     return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register`, datos).pipe(
       tap((res) => {
         localStorage.setItem(TOKEN_KEY, res.access_token);
@@ -49,12 +56,33 @@ export class AuthService {
           nombreCompleto: res.usuario.nombre_completo,
           email: res.usuario.email,
           telefono: res.usuario.telefono,
+          fechaNacimiento: res.usuario.fecha_nacimiento,
+          fotoPerfilUrl: res.usuario.foto_perfil_url,
           activo: true,
           rol: res.usuario.role.nombre as Rol,
           roleId: res.usuario.role.id,
         };
         localStorage.setItem(USER_KEY, JSON.stringify(usuario));
         this.usuarioSignal.set(usuario);
+      }),
+      switchMap((res) => {
+        // Si es CLIENTE y tiene RUT, crear registro en tabla clientes
+        if (esCliente && rut) {
+          const clientePayload: CreateClientePayload = {
+            nombre_completo: res.usuario.nombre_completo,
+            email: res.usuario.email,
+            rut: rut.trim().toUpperCase(),
+            telefono: res.usuario.telefono,
+          };
+          return this.clienteService.crear(clientePayload).pipe(
+            tap(() => console.log('Cliente creado automáticamente tras registro')),
+            catchError((err) => {
+              console.warn('No se pudo crear cliente automáticamente:', err);
+              return of(null);
+            }),
+          );
+        }
+        return of(null);
       }),
     );
   }

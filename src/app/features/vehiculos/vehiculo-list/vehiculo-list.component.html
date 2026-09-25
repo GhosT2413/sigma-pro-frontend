@@ -1,9 +1,9 @@
 <div class="vehiculos__header">
   <h2>{{ filtroClienteId() ? 'Vehículos de ' + (filtroClienteNombre() ?? ('cliente #' + filtroClienteId())) : (esCliente() ? 'Mis vehículos' : 'Vehículos') }}</h2>
-  <a routerLink="/vehiculos/nuevo" class="sigma-btn sigma-btn--primary">+ Agregar vehículo</a>
+  <a [routerLink]="[rutaBase(), 'nuevo']" class="sigma-btn sigma-btn--primary">+ Agregar vehículo</a>
 </div>
 @if (filtroClienteId()) {
-  <a routerLink="/vehiculos" class="vehiculos__volver">← Ver todos los vehículos</a>
+  <a [routerLink]="rutaBase()" class="vehiculos__volver">← Ver todos los vehículos</a>
 }
 
 @if (cargando()) {
@@ -25,15 +25,15 @@
     <tbody>
       @for (v of vehiculos(); track v.id) {
         <tr>
-          <td><strong>{{ v.patente }}</strong></td>
-          <td>{{ v.marca }} {{ v.modelo }}</td>
-          <td>{{ v.anio ?? '—' }}</td>
-          <td>{{ v.tipoUso }}</td>
-          <td>{{ v.estado }}</td>
-          <td>{{ v.kilometrajeActual | number }} km</td>
-          <td>{{ v.clienteNombre ?? '—' }}</td>
-          <td class="vehiculos__acciones">
-            <a [routerLink]="['/vehiculos', v.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
+          <td data-label="Patente"><strong>{{ v.patente }}</strong></td>
+          <td data-label="Marca / Modelo">{{ v.marca }} {{ v.modelo }}</td>
+          <td data-label="Año">{{ v.anio ?? '—' }}</td>
+          <td data-label="Tipo de uso">{{ v.tipoUso }}</td>
+          <td data-label="Estado">{{ v.estado }}</td>
+          <td data-label="Kilometraje">{{ v.kilometrajeActual | number }} km</td>
+          <td data-label="Cliente">{{ v.clienteNombre ?? '—' }}</td>
+          <td class="vehiculos__acciones" data-label="Acciones">
+            <a [routerLink]="[rutaBase(), v.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
             <button class="sigma-btn sigma-btn--danger" (click)="eliminar(v)">Eliminar</button>
           </td>
         </tr>

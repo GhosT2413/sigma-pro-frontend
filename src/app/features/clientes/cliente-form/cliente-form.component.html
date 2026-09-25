@@ -4,32 +4,51 @@
   <p>Cargando cliente…</p>
 } @else {
   <form class="sigma-card cliente-form" [formGroup]="form" (ngSubmit)="guardar()">
+    @if (mensajeExito()) {
+      <div class="cliente-form__exito">
+        ✓ {{ mensajeExito() }} Redirigiendo a clientes…
+      </div>
+    }
+
+    @if (error()) {
+      <div class="cliente-form__error">
+        ✕ {{ error() }}
+      </div>
+    }
+
     <div class="sigma-form-field">
-      <label for="nombre_completo">Nombre completo</label>
-      <input id="nombre_completo" formControlName="nombre_completo" />
+      <label for="nombre_completo">Nombre completo *</label>
+      <input id="nombre_completo" formControlName="nombre_completo" placeholder="Ej: Juan Pérez" />
+      @if (form.controls.nombre_completo.touched && form.controls.nombre_completo.invalid) {
+        <small class="cliente-form__campo-error">El nombre completo es obligatorio.</small>
+      }
     </div>
 
     <div class="cliente-form__fila">
       <div class="sigma-form-field">
-        <label for="rut">RUT</label>
-        <input id="rut" formControlName="rut" />
+        <label for="rut">RUT (con dígito verificador) *</label>
+        <input id="rut" formControlName="rut" sigmaRutFormat placeholder="Ej: 12345678-9" />
+        @if (form.controls.rut.touched && form.controls.rut.errors?.['rutInvalido']) {
+          <small class="cliente-form__campo-error">RUT o dígito verificador inválido.</small>
+        } @else if (form.controls.rut.touched && form.controls.rut.errors?.['required']) {
+          <small class="cliente-form__campo-error">El RUT es obligatorio.</small>
+        }
       </div>
       <div class="sigma-form-field">
         <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" />
+        <input id="email" type="email" formControlName="email" placeholder="cliente@correo.com" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small class="cliente-form__campo-error">Correo electrónico inválido.</small>
+        }
       </div>
       <div class="sigma-form-field">
         <label for="telefono">Teléfono</label>
-        <input id="telefono" formControlName="telefono" />
+        <input id="telefono" formControlName="telefono" placeholder="+56 9 1234 5678" />
       </div>
     </div>
 
-    @if (error()) {
-      <div class="cliente-form__error">{{ error() }}</div>
-    }
-
     <div class="cliente-form__acciones">
-      <a routerLink="/clientes" class="sigma-btn sigma-btn--outline">Cancelar</a>
+      <a [routerLink]="rutaBase()" class="sigma-btn sigma-btn--outline">Cancelar</a>
       <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
         {{ guardando() ? 'Guardando…' : clienteId() ? 'Guardar cambios' : 'Crear cliente' }}
       </button>

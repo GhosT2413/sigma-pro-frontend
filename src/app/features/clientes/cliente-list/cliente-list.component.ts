@@ -26,7 +26,9 @@ export class ClienteListComponent {
     this.cargando.set(true);
     this.clienteService.listar().subscribe({
       next: (data) => {
-        this.clientes.set(data);
+        // Deduplicar por ID por si el backend devuelve duplicados
+        const unicos = Array.from(new Map(data.map(c => [c.id, c])).values());
+        this.clientes.set(unicos);
         this.cargando.set(false);
       },
       error: () => this.cargando.set(false),
@@ -36,8 +38,14 @@ export class ClienteListComponent {
   eliminar(cliente: Cliente): void {
     if (!confirm(`¿Eliminar al cliente ${cliente.nombreCompleto}?`)) return;
 
-    this.clienteService.eliminar(cliente.id).subscribe(() => {
-      this.clientes.update((lista) => lista.filter((c) => c.id !== cliente.id));
+    this.clienteService.eliminar(cliente.id).subscribe({
+      next: () => {
+        this.clientes.update((lista) => lista.filter((c) => c.id !== cliente.id));
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'No se pudo eliminar el cliente.';
+        alert(msg);
+      },
     });
   }
 }

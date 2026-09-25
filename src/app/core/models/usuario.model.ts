@@ -2,19 +2,21 @@
  * IMPORTANTE: los nombres de rol dependen de la columna `nombre` de la tabla `roles`
  * en tu script SQL (roles.module.ts registra la entidad Role, pero RolesController
  * está vacío: no hay endpoint para consultarlos desde la API).
- * Se asume por ahora CLIENTE | MECANICO_INDEPENDIENTE | TALLER | ADMINISTRADOR
+ * Se asume por ahora CLIENTE | MECANICO_INDEPENDIENTE | TALLER | ADMINISTRADOR | MECANICO | RECEPCIONISTA
  * (el comentario en usuarios.controller.ts "rol 2 = MECANICO_INDEPENDIENTE" es la única
  * pista disponible). CONFIRMAR contra el contenido real de la tabla `roles` y ajustar
  * este tipo si los valores no calzan exactamente (mayúsculas/guiones bajos incluidos).
  */
-export type Rol = 'CLIENTE' | 'MECANICO_INDEPENDIENTE' | 'TALLER' | 'ADMINISTRADOR';
+export type Rol = 'CLIENTE' | 'MECANICO_INDEPENDIENTE' | 'TALLER' | 'ADMINISTRADOR' | 'MECANICO' | 'RECEPCIONISTA';
 
-/** Shape tal cual lo devuelve el backend (usuarios.entity.ts, con la relación `role`). */
+/** Shape tal cual lo devuelve el backend (usuarios.entity.ts, con la relación `role` y `taller`). */
 export interface UsuarioBackend {
   id: number;
   nombre_completo: string;
   email: string;
   telefono?: string;
+  fecha_nacimiento?: string;
+  foto_perfil_url?: string;
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -24,6 +26,12 @@ export interface UsuarioBackend {
     descripcion?: string;
     activo: boolean;
   };
+  taller?: {
+    id: number;
+    nombre: string;
+    rut_empresa: string;
+  } | null;
+  taller_id?: number | null;
 }
 
 /** Shape normalizado (camelCase) que usa el resto de los componentes del frontend. */
@@ -32,9 +40,17 @@ export interface Usuario {
   nombreCompleto: string;
   email: string;
   telefono?: string;
+  fechaNacimiento?: string;
+  fotoPerfilUrl?: string;
   activo: boolean;
   rol: Rol;
   roleId: number;
+  tallerId?: number | null;
+  taller?: {
+    id: number;
+    nombre: string;
+    rutEmpresa: string;
+  } | null;
 }
 
 export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
@@ -43,9 +59,17 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
     nombreCompleto: u.nombre_completo,
     email: u.email,
     telefono: u.telefono,
+    fechaNacimiento: u.fecha_nacimiento,
+    fotoPerfilUrl: u.foto_perfil_url,
     activo: u.activo,
     rol: u.role?.nombre as Rol,
     roleId: u.role?.id,
+    tallerId: u.taller_id ?? u.taller?.id ?? null,
+    taller: u.taller ? {
+      id: u.taller.id,
+      nombre: u.taller.nombre,
+      rutEmpresa: u.taller.rut_empresa,
+    } : null,
   };
 }
 
@@ -57,6 +81,7 @@ export interface CreateUsuarioPayload {
   telefono?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
+  taller_id?: number;
   // Mecánico Independiente
   cedula_frente_url?: string;
   cedula_reverso_url?: string;
@@ -66,6 +91,18 @@ export interface CreateUsuarioPayload {
   patente_comercial?: string;
   comprobante_domicilio_url?: string;
   representante_legal?: string;
+}
+
+/** Body para PATCH /usuarios/:id (update-usuario.dto.ts, snake_case). */
+export interface UpdateUsuarioPayload {
+  nombre_completo?: string;
+  email?: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  foto_perfil_url?: string;
+  activo?: boolean;
+  role_id?: number;
+  taller_id?: number;
 }
 
 export interface LoginRequest {
@@ -85,6 +122,7 @@ export interface RegisterRequest {
   telefono?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
+  taller_id?: number;
   // Mecánico Independiente
   cedula_frente_url?: string;
   cedula_reverso_url?: string;
@@ -104,12 +142,20 @@ export interface RegisterResponse {
     nombre_completo: string;
     email: string;
     telefono?: string;
+    fecha_nacimiento?: string;
+    foto_perfil_url?: string;
     role: {
       id: number;
       nombre: string;
       descripcion?: string;
       activo: boolean;
     };
+    taller?: {
+      id: number;
+      nombre: string;
+      rut_empresa: string;
+    } | null;
+    taller_id?: number | null;
   };
 }
 
@@ -118,4 +164,6 @@ export const ROLE_LABELS: Record<Rol, string> = {
   MECANICO_INDEPENDIENTE: 'Mecánico Independiente',
   TALLER: 'Taller',
   ADMINISTRADOR: 'Administrador',
+  MECANICO: 'Mecánico',
+  RECEPCIONISTA: 'Recepcionista',
 };

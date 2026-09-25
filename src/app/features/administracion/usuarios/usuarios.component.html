@@ -1,5 +1,4 @@
 <h2>Usuarios del sistema</h2>
-<p class="usuarios__subtitulo">Gestión global de usuarios y roles (RF-01/RF-17).</p>
 
 @if (cargando()) {
   <p>Cargando usuarios…</p>
@@ -28,8 +27,8 @@
             </span>
           </td>
           <td>
-            <button class="sigma-btn sigma-btn--outline" (click)="cambiarEstado(u)">
-              {{ u.activo ? 'Desactivar' : 'Activar' }}
+            <button class="sigma-btn sigma-btn--outline sigma-btn--danger" (click)="eliminar(u)">
+              Eliminar
             </button>
           </td>
         </tr>

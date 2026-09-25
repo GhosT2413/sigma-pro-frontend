@@ -11,6 +11,16 @@ import {
 } from '../models/vehiculo.model';
 import { environment } from '../../../environments/environment';
 
+interface CrearVehiculoResponse {
+  mensaje: string;
+  vehiculo: VehiculoBackend;
+}
+
+interface ActualizarVehiculoResponse {
+  mensaje: string;
+  vehiculo: VehiculoBackend;
+}
+
 // CRUD completo (agregado en vehiculos.controller.ts: GET:id, PATCH general, DELETE).
 @Injectable({ providedIn: 'root' })
 export class VehiculoService {
@@ -25,13 +35,22 @@ export class VehiculoService {
     return this.http.get<VehiculoBackend>(`${this.baseUrl}/${id}`).pipe(map(mapVehiculoBackend));
   }
 
-  crear(payload: CreateVehiculoPayload): Observable<VehiculoBackend> {
-    return this.http.post<VehiculoBackend>(this.baseUrl, payload);
+  /** Busca un vehículo por patente (normalizada) */
+  obtenerPorPatente(patente: string): Observable<Vehiculo | undefined> {
+    const patenteNorm = patente.toUpperCase().replace(/\s+/g, '');
+    return this.http.get<VehiculoBackend[]>(this.baseUrl).pipe(
+      map((lista) => lista.map(mapVehiculoBackend)),
+      map((vehiculos) => vehiculos.find((v) => v.patente.toUpperCase().replace(/\s+/g, '') === patenteNorm)),
+    );
+  }
+
+  crear(payload: CreateVehiculoPayload): Observable<CrearVehiculoResponse> {
+    return this.http.post<CrearVehiculoResponse>(this.baseUrl, payload);
   }
 
   /** Edición general (marca/modelo/patente/tipo_uso/estado/cliente) — NO toca el kilometraje. */
-  actualizar(id: number, payload: UpdateVehiculoPayload): Observable<VehiculoBackend> {
-    return this.http.patch<VehiculoBackend>(`${this.baseUrl}/${id}`, payload);
+  actualizar(id: number, payload: UpdateVehiculoPayload): Observable<ActualizarVehiculoResponse> {
+    return this.http.patch<ActualizarVehiculoResponse>(`${this.baseUrl}/${id}`, payload);
   }
 
   actualizarKilometraje(id: number, payload: UpdateKilometrajePayload): Observable<VehiculoBackend> {

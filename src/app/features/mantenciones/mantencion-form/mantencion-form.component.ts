@@ -1,21 +1,31 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MantencionService } from '../../../core/services/mantencion.service';
+import { VehiculoService } from '../../../core/services/vehiculo.service';
+import { ClienteService } from '../../../core/services/cliente.service';
+import { AlertaService } from '../../../core/services/alerta.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { EstadoFicha } from '../../../core/models/mantencion.model';
+import { KilometrajeFormatDirective } from '../../../shared/directives/kilometraje-format.directive';
+import { PatenteFormatDirective } from '../../../shared/directives/patente-format.directive';
+import { toSignal } from '@angular/core/rxjs-interop';
 
-// POST /fichas (crear) y PATCH /fichas/:id (editar).
 @Component({
   selector: 'sigma-mantencion-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, KilometrajeFormatDirective, PatenteFormatDirective],
   templateUrl: './mantencion-form.component.html',
   styleUrl: './mantencion-form.component.scss',
 })
 export class MantencionFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly mantencionService = inject(MantencionService);
+  private readonly vehiculoService = inject(VehiculoService);
+  private readonly clienteService = inject(ClienteService);
+  private readonly alertaService = inject(AlertaService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -23,6 +33,13 @@ export class MantencionFormComponent {
   readonly cargando = signal(false);
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly esTaller = computed(() => this.auth.rol() === 'TALLER');
+  readonly esCliente = computed(() => this.auth.rol() === 'CLIENTE');
+  // Modo solo lectura (ruta /ver para CLIENTE)
+  readonly soloLectura = computed(() => this.route.snapshot.url.some(s => s.path === 'ver'));
+
+  // Para TALLER: usamos patente en lugar de ID
+  readonly patente = signal<string>('');
 
   readonly form = this.fb.nonNullable.group({
     vehiculo_id: [null as number | null, Validators.required],
@@ -30,8 +47,7 @@ export class MantencionFormComponent {
     mecanico_id: [null as number | null],
     kilometraje_ingreso: [0, [Validators.required, Validators.min(0)]],
     kilometraje_salida: [null as number | null],
-    horas_trabajadas: [0, Validators.min(0)],
-    valor_hora: [0, Validators.min(0)],
+    valor_arreglo: [0, Validators.min(0)],
     costo_repuestos: [0, Validators.min(0)],
     descripcion: [''],
     diagnostico: [''],
@@ -39,15 +55,17 @@ export class MantencionFormComponent {
     estado: ['EN_ESPERA' as EstadoFicha],
   });
 
-  readonly costoManoObra = computed(() => {
-    const { horas_trabajadas, valor_hora } = this.form.getRawValue();
-    return horas_trabajadas * valor_hora;
-  });
+  private readonly valorArregloSignal = toSignal(this.form.controls.valor_arreglo.valueChanges, { initialValue: 0 });
+  private readonly costoRepuestosSignal = toSignal(this.form.controls.costo_repuestos.valueChanges, { initialValue: 0 });
 
-  readonly costoTotal = computed(() => this.costoManoObra() + this.form.getRawValue().costo_repuestos);
+  readonly costoTotal = computed(() => this.valorArregloSignal() + this.costoRepuestosSignal());
+
+  // Info del vehículo para mostrar
+  readonly vehiculoInfo = signal<{ patente: string; marca: string; modelo: string; anio: number; clienteNombre: string; clienteRut?: string } | null>(null);
 
   constructor() {
     const idParam = this.route.snapshot.paramMap.get('id');
+    const isVer = this.route.snapshot.url.some(s => s.path === 'ver');
     if (idParam) {
       const id = Number(idParam);
       this.fichaId.set(id);
@@ -60,14 +78,18 @@ export class MantencionFormComponent {
             mecanico_id: f.mecanicoId ?? null,
             kilometraje_ingreso: f.kilometrajeIngreso,
             kilometraje_salida: f.kilometrajeSalida ?? null,
-            horas_trabajadas: f.horasTrabajadas,
-            valor_hora: f.valorHora,
+            valor_arreglo: f.valorArreglo,
             costo_repuestos: f.costoRepuestos,
             descripcion: f.descripcion,
             diagnostico: f.diagnostico,
             trabajo_realizado: f.trabajoRealizado,
             estado: f.estado,
           });
+          this.cargarInfoVehiculo(f.vehiculoId);
+          // Si es modo solo lectura, deshabilitar todos los campos
+          if (isVer || this.soloLectura()) {
+            this.form.disable();
+          }
           this.cargando.set(false);
         },
         error: () => this.cargando.set(false),
@@ -76,12 +98,95 @@ export class MantencionFormComponent {
       // Al crear: si venimos desde "+ Nueva ficha" de un vehículo específico, se precompleta.
       const vehiculoIdParam = this.route.snapshot.queryParamMap.get('vehiculoId');
       if (vehiculoIdParam) {
-        this.form.patchValue({ vehiculo_id: Number(vehiculoIdParam) });
+        const vehiculoId = Number(vehiculoIdParam);
+        this.form.patchValue({ vehiculo_id: vehiculoId });
+        this.cargarInfoVehiculo(vehiculoId);
       }
     }
   }
 
-  guardar(): void {
+  private cargarInfoVehiculo(vehiculoId: number): void {
+    this.vehiculoService.obtener(vehiculoId).subscribe({
+      next: (v) => {
+        this.form.controls.kilometraje_ingreso.setValue(v.kilometrajeActual);
+        this.vehiculoInfo.set({
+          patente: v.patente,
+          marca: v.marca,
+          modelo: v.modelo,
+          anio: v.anio ?? new Date().getFullYear(),
+          clienteNombre: v.clienteNombre ?? '',
+          clienteRut: undefined,
+        });
+        // Buscar RUT del cliente si hay cliente_id
+        if (v.clienteId) {
+          this.clienteService.obtener(v.clienteId).subscribe({
+            next: (c) => this.vehiculoInfo.update(info => info ? { ...info, clienteRut: c.rut } : null),
+            error: () => {},
+          });
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  /** Busca vehículo por patente y auto-rellena kilometraje y datos del dueño */
+  buscarPorPatente(): void {
+    const patente = this.patente().trim().toUpperCase().replace(/\s+/g, '');
+    if (!patente) {
+      this.limpiarDatosVehiculo();
+      return;
+    }
+
+    this.cargando.set(true);
+    this.vehiculoService.obtenerPorPatente(patente).subscribe({
+      next: (vehiculo) => {
+        this.cargando.set(false);
+        if (vehiculo) {
+          this.form.patchValue({ vehiculo_id: vehiculo.id });
+          this.form.controls.kilometraje_ingreso.setValue(vehiculo.kilometrajeActual);
+          this.vehiculoInfo.set({
+            patente: vehiculo.patente,
+            marca: vehiculo.marca,
+            modelo: vehiculo.modelo,
+            anio: vehiculo.anio ?? new Date().getFullYear(),
+            clienteNombre: vehiculo.clienteNombre ?? '',
+            clienteRut: undefined,
+          });
+          if (vehiculo.clienteId) {
+            this.clienteService.obtener(vehiculo.clienteId).subscribe({
+              next: (c) => this.vehiculoInfo.update(info => info ? { ...info, clienteRut: c.rut } : null),
+              error: () => {},
+            });
+          }
+        } else {
+          this.error.set(`No se encontró vehículo con patente ${patente}`);
+          this.vehiculoInfo.set(null);
+        }
+      },
+      error: () => {
+        this.cargando.set(false);
+        this.error.set('Error al buscar el vehículo');
+      },
+    });
+  }
+
+  /** Limpia todos los datos del vehículo cuando se borra la patente */
+  limpiarDatosVehiculo(): void {
+    this.form.patchValue({ vehiculo_id: null });
+    this.form.controls.kilometraje_ingreso.setValue(0);
+    this.vehiculoInfo.set(null);
+    this.error.set(null);
+  }
+
+  /** Detecta cuando se limpia la patente y limpia el formulario */
+  onPatenteChange(): void {
+    const patente = this.patente().trim();
+    if (!patente) {
+      this.limpiarDatosVehiculo();
+    }
+  }
+
+guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -96,7 +201,6 @@ export class MantencionFormComponent {
       taller_id: raw.taller_id ?? undefined,
       mecanico_id: raw.mecanico_id ?? undefined,
       kilometraje_salida: raw.kilometraje_salida ?? undefined,
-      costo_mano_obra: this.costoManoObra(),
       costo_total: this.costoTotal(),
     };
 
@@ -106,13 +210,70 @@ export class MantencionFormComponent {
 
     peticion.subscribe({
       next: () => {
-        this.guardando.set(false);
-        this.router.navigate(['/mantenciones']);
+        // Crear alerta al cliente según el estado
+        if (raw.vehiculo_id && (raw.estado === 'LISTO' || raw.estado === 'CANCELADO' || raw.estado === 'EN_MANTENIMIENTO')) {
+          this.crearAlertaCliente(raw.vehiculo_id!, raw.estado);
+        }
+
+        // Si el estado es LISTO y hay kilometraje de salida, actualizar el vehículo
+        if (raw.estado === 'LISTO' && raw.kilometraje_salida && raw.kilometraje_salida > 0 && raw.vehiculo_id) {
+          this.vehiculoService.actualizarKilometraje(raw.vehiculo_id!, { nuevo_kilometraje: raw.kilometraje_salida }).subscribe({
+            next: () => {
+              this.guardando.set(false);
+              this.router.navigate(['/mantenciones']);
+            },
+            error: () => {
+              // Aunque falle la actualización de kilometraje, la ficha se guardó
+              this.guardando.set(false);
+              this.router.navigate(['/mantenciones']);
+            },
+          });
+        } else {
+          this.guardando.set(false);
+          this.router.navigate(['/mantenciones']);
+        }
       },
       error: () => {
         this.guardando.set(false);
         this.error.set('No se pudo guardar la ficha.');
       },
     });
+  }
+
+  /** Crea alerta automática al cliente según el estado de la ficha */
+  private crearAlertaCliente(vehiculoId: number, estado: string): void {
+    let descripcion = '';
+    let tipo: 'AMARILLO' | 'ROJO' | 'VERDE' = 'AMARILLO';
+
+    switch (estado) {
+      case 'LISTO':
+        descripcion = 'Tu Vehículo esta listo, ven a buscarlo';
+        tipo = 'VERDE';
+        break;
+      case 'CANCELADO':
+        descripcion = 'Tu Vehículo fue cancelado, no se pudo arreglar';
+        tipo = 'ROJO';
+        break;
+      case 'EN_MANTENIMIENTO':
+        descripcion = 'Tu vehículo está en mantenimiento';
+        tipo = 'AMARILLO';
+        break;
+      default:
+        return; // No crear alerta para otros estados
+    }
+
+    this.alertaService.crear({
+      vehiculo_id: vehiculoId,
+      tipo,
+      descripcion,
+      estado: 'PENDIENTE',
+    }).subscribe({
+      next: () => console.log('Alerta creada para cliente'),
+      error: (err) => console.warn('No se pudo crear alerta:', err),
+    });
+  }
+
+  volver(): void {
+    this.router.navigate(['/mantenciones']);
   }
 }

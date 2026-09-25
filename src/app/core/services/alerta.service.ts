@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Alerta, AlertaBackend, EstadoAlerta, TipoAlerta, mapAlertaBackend } from '../models/alerta.model';
+import { Alerta, AlertaBackend, EstadoAlerta, TipoAlerta, mapAlertaBackend, CreateAlertaPayload } from '../models/alerta.model';
 
 // GET /alertas (nuevo, agregado a alertas.controller.ts). Filtros opcionales por query params.
 @Injectable({ providedIn: 'root' })
@@ -20,6 +20,11 @@ export class AlertaService {
       // El backend no filtra por 'tipo' (Amarillo/Rojo) todavía, así que si se pide, se filtra acá.
       map((lista) => (filtros?.tipo ? lista.filter((a) => a.tipo === filtros.tipo) : lista)),
     );
+  }
+
+  /** POST /alertas — crear alerta para el cliente */
+  crear(payload: CreateAlertaPayload): Observable<AlertaBackend> {
+    return this.http.post<AlertaBackend>(this.baseUrl, payload);
   }
 
   /** PATCH /alertas/:id (nuevo) — cambiar el estado, ej. marcarla Atendida al terminar el trabajo. */

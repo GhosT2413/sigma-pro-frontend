@@ -10,9 +10,7 @@ export interface FichaMantencionBackend {
   fecha_ingreso: string;
   kilometraje_ingreso: number;
   kilometraje_salida?: number;
-  horas_trabajadas: number;
-  valor_hora: number;
-  costo_mano_obra: number;
+  valor_arreglo: number;
   costo_repuestos: number;
   costo_total: number;
   descripcion?: string;
@@ -31,9 +29,7 @@ export interface Ficha {
   fechaIngreso: string;
   kilometrajeIngreso: number;
   kilometrajeSalida?: number;
-  horasTrabajadas: number;
-  valorHora: number;
-  costoManoObra: number;
+  valorArreglo: number;
   costoRepuestos: number;
   costoTotal: number;
   descripcion?: string;
@@ -51,9 +47,7 @@ export function mapFichaBackend(f: FichaMantencionBackend): Ficha {
     fechaIngreso: f.fecha_ingreso,
     kilometrajeIngreso: f.kilometraje_ingreso,
     kilometrajeSalida: f.kilometraje_salida,
-    horasTrabajadas: Number(f.horas_trabajadas),
-    valorHora: Number(f.valor_hora),
-    costoManoObra: Number(f.costo_mano_obra),
+    valorArreglo: Number(f.valor_arreglo),
     costoRepuestos: Number(f.costo_repuestos),
     costoTotal: Number(f.costo_total),
     descripcion: f.descripcion,
@@ -74,9 +68,7 @@ export interface CreateFichaPayload {
   mecanico_id?: number;
   kilometraje_ingreso: number;
   kilometraje_salida?: number;
-  horas_trabajadas?: number;
-  valor_hora?: number;
-  costo_mano_obra?: number;
+  valor_arreglo?: number;
   costo_repuestos?: number;
   costo_total?: number;
   descripcion?: string;

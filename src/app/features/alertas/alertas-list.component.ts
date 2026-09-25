@@ -80,14 +80,25 @@ export class AlertasListComponent {
 
   private resolverIdsVehiculosPropios() {
     const usuarioId = this.auth.usuario()?.id;
-    if (!usuarioId) return of<number[]>([]);
+    const userEmail = this.auth.usuario()?.email;
+    if (!usuarioId || !userEmail) return of<number[]>([]);
 
     return this.clienteService.obtenerPorUsuarioId(usuarioId).pipe(
       switchMap((miCliente) => {
-        if (!miCliente) return of<number[]>([]);
-        return this.vehiculoService
-          .listar()
-          .pipe(map((vehiculos) => vehiculos.filter((v) => v.clienteId === miCliente.id).map((v) => v.id)));
+        if (miCliente) {
+          return this.vehiculoService
+            .listar()
+            .pipe(map((vehiculos) => vehiculos.filter((v) => v.clienteId === miCliente.id).map((v) => v.id)));
+        }
+        // Fallback: buscar por email
+        return this.clienteService.obtenerPorEmail(userEmail).pipe(
+          switchMap((clientePorEmail) => {
+            if (!clientePorEmail) return of<number[]>([]);
+            return this.vehiculoService
+              .listar()
+              .pipe(map((vehiculos) => vehiculos.filter((v) => v.clienteId === clientePorEmail.id).map((v) => v.id)));
+          }),
+        );
       }),
     );
   }

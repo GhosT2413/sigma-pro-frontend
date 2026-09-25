@@ -1,0 +1,135 @@
+@if (cargando()) {
+  <div class="sigma-loading">Cargando perfil…</div>
+} @else {
+  <div class="perfil-container" [class.perfil--cliente]="esCliente()">
+    <div class="perfil-header">
+      <div class="perfil-header__info">
+        <h2>Mi Perfil</h2>
+        @if (esCliente()) {
+          <span class="perfil__rol-badge-cliente">Cliente</span>
+        }
+      </div>
+      <div class="perfil-header__acciones">
+        @if (!editando()) {
+          <button class="sigma-btn sigma-btn--primary" (click)="toggleEditar()">
+            <span class="btn-icon">✎</span> Editar perfil
+          </button>
+        } @else {
+          <button class="sigma-btn sigma-btn--outline" (click)="cancelar()">Cancelar</button>
+          <button class="sigma-btn sigma-btn--primary" (click)="guardar()" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (mensajeExito()) {
+      <div class="perfil__exito">
+        ✓ {{ mensajeExito() }}
+      </div>
+    }
+
+    @if (error()) {
+      <div class="perfil__error">
+        ✕ {{ error() }}
+      </div>
+    }
+
+    <div class="perfil__grid">
+      <section class="perfil__foto sigma-card">
+        <div class="perfil__avatar-wrapper">
+          @if (fotoPreview(); as foto) {
+            <img [src]="foto" alt="Foto de perfil" class="perfil__avatar" />
+          } @else {
+            <div class="perfil__avatar-placeholder">{{ usuarioActual()?.nombreCompleto?.charAt(0) || 'U' }}</div>
+          }
+          @if (editando()) {
+            <label class="perfil__foto-input-label">
+              <input type="file" accept="image/*" (change)="onFileSelected($event)" class="perfil__foto-input" />
+              <span class="perfil__foto-input-btn">Cambiar foto</span>
+            </label>
+          }
+        </div>
+      </section>
+
+      <section class="perfil__datos sigma-card">
+        <form [formGroup]="form" (ngSubmit)="guardar()">
+          <div class="perfil__seccion">
+            <h3 class="perfil__seccion-titulo">Información personal</h3>
+            
+            <div class="perfil__campo">
+              <label for="nombre_completo">👤 Nombre completo</label>
+              <div class="perfil__input-wrapper view-mode">
+                <input id="nombre_completo" formControlName="nombre_completo" />
+              </div>
+              <small class="perfil__campo-ayuda">El nombre no se puede modificar desde aquí.</small>
+            </div>
+
+            @if (esCliente()) {
+              <div class="perfil__campo">
+                <label for="rut">🆔 RUT</label>
+                <div class="perfil__input-wrapper view-mode">
+                  <input id="rut" formControlName="rut" placeholder="Sin RUT registrado" />
+                </div>
+                <small class="perfil__campo-ayuda">El RUT no se puede modificar.</small>
+              </div>
+            }
+
+            <div class="perfil__campo">
+              <label for="email">✉️ Correo electrónico <span class="requerido">*</span></label>
+              <div class="perfil__input-wrapper" 
+                   [class.view-mode]="!editando()" 
+                   [class.edit-mode]="editando()"
+                   [class.has-error]="form.controls.email.touched && form.controls.email.invalid">
+                <input id="email" type="email" formControlName="email" placeholder="usuario@ejemplo.com" />
+              </div>
+              @if (form.controls.email.touched && form.controls.email.invalid) {
+                <small class="perfil__campo-error">
+                  @if (form.controls.email.errors?.['required']) { El correo es obligatorio. }
+                  @else if (form.controls.email.errors?.['email']) { Formato de correo inválido. }
+                </small>
+              }
+            </div>
+
+            <div class="perfil__campo">
+              <label for="telefono">📱 Teléfono</label>
+              <div class="perfil__input-wrapper" 
+                   [class.view-mode]="!editando()" 
+                   [class.edit-mode]="editando()">
+                <input id="telefono" formControlName="telefono" placeholder="+56 9 1234 5678" />
+              </div>
+            </div>
+
+            <div class="perfil__campo">
+              <label for="fecha_nacimiento">📅 Fecha de nacimiento</label>
+              <div class="perfil__date-wrapper" 
+                   [class.view-mode]="!editando()" 
+                   [class.edit-mode]="editando()">
+                <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" />
+              </div>
+              @if (edad() !== null) {
+                <small class="perfil__campo-edad">Edad: {{ edad() }} años</small>
+              }
+            </div>
+          </div>
+
+          <div class="perfil__seccion">
+            <h3 class="perfil__seccion-titulo">Cuenta</h3>
+            <div class="perfil__campo">
+              <label>Rol</label>
+              <div class="perfil__rol-badge">
+                <span class="sigma-badge" [ngClass]="{
+                  'sigma-badge--verde': usuarioActual()?.rol === 'CLIENTE',
+                  'sigma-badge--amarillo': usuarioActual()?.rol === 'MECANICO_INDEPENDIENTE' || usuarioActual()?.rol === 'MECANICO',
+                  'sigma-badge--rojo': usuarioActual()?.rol === 'TALLER' || usuarioActual()?.rol === 'ADMINISTRADOR' || usuarioActual()?.rol === 'RECEPCIONISTA'
+                }">
+                  {{ usuarioActual()?.rol }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+}

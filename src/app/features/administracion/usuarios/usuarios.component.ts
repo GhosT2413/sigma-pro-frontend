@@ -36,4 +36,11 @@ export class UsuariosComponent {
       );
     });
   }
+
+  eliminar(usuario: Usuario): void {
+    if (!confirm(`¿Eliminar al usuario "${usuario.nombreCompleto}"?`)) return;
+    this.usuarioService.eliminar(usuario.id).subscribe(() => {
+      this.usuarios.update((lista) => lista.filter((u) => u.id !== usuario.id));
+    });
+  }
 }

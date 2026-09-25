@@ -1,10 +1,9 @@
 /**
- * Ajustado a alerta-mantencion.entity.ts real. IMPORTANTE: AlertasModule NO registra
- * ningún @Controller — no existe ningún endpoint HTTP para alertas todavía. AlertasService
- * es de uso puramente interno (lo invoca PrediccionesService.evaluarUmbral() al generar
- * una predicción). Este modelo queda listo para cuando agregues un AlertasController.
+ * Ajustado a alerta-mantencion.entity.ts real. AlertasController expone
+ * GET /alertas (filtros vehiculo_id/estado) y PATCH /alertas/:id.
+ * AlertasService también la usa internamente PrediccionesService.evaluarUmbral().
  */
-export type TipoAlerta = 'AMARILLO' | 'ROJO'; // 'Verde' (al día) no genera fila en la BD.
+export type TipoAlerta = 'AMARILLO' | 'ROJO' | 'VERDE'; // 'Verde' (al día) - agregado para alertas de estado LISTO
 export type EstadoAlerta = 'PENDIENTE' | 'ATENDIDA' | 'CANCELADA';
 
 export interface AlertaBackend {
@@ -38,6 +37,16 @@ export function mapAlertaBackend(a: AlertaBackend): Alerta {
     fechaObjetivo: a.fecha_objetivo,
     estado: a.estado,
   };
+}
+
+/** Body exacto de POST /alertas (create-alerta.dto.ts, snake_case). */
+export interface CreateAlertaPayload {
+  vehiculo_id: number;
+  tipo: TipoAlerta;
+  descripcion: string;
+  kilometraje_objetivo?: number;
+  fecha_objetivo?: string;
+  estado?: EstadoAlerta;
 }
 
 // GET /dashboard/metricas (dashboard.controller.ts) — confirmado.

@@ -1,14 +1,16 @@
 <header class="topbar">
   <div class="topbar__left">
-    <button class="topbar__menu-btn" (click)="toggleMenu.emit()">☰</button>
+    <button class="topbar__menu-btn" (click)="toggleMenu.emit()" aria-label="Abrir menú">☰</button>
   </div>
   @if (auth.usuario(); as usuario) {
     <div class="topbar__usuario">
       <div class="topbar__datos">
-        <strong>{{ usuario.nombreCompleto }}</strong>
+        <strong class="topbar__nombre">{{ usuario.nombreCompleto }}</strong>
         <span class="topbar__rol">{{ roleLabels[usuario.rol] }}</span>
       </div>
-      <button class="sigma-btn sigma-btn--outline" (click)="cerrarSesion()">Cerrar sesión</button>
+      <button class="topbar__avatar-btn" (click)="toggleMenu.emit()" aria-label="Menú de usuario" title="{{ usuario.nombreCompleto }}">
+        {{ usuario.nombreCompleto.charAt(0).toUpperCase() }}
+      </button>
     </div>
   }
 </header>

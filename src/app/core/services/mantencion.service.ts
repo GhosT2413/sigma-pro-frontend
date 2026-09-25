@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CreateFichaPayload, Ficha, FichaMantencionBackend, mapFichaBackend } from '../models/mantencion.model';
 
-// CRUD (agregado en fichas.controller.ts: GET, GET:id, PATCH, además del POST original).
+// CRUD (agregado en fichas.controller.ts: GET, GET:id, PATCH, DELETE, además del POST original).
 @Injectable({ providedIn: 'root' })
 export class MantencionService {
   private readonly http = inject(HttpClient);
@@ -28,5 +28,9 @@ export class MantencionService {
 
   actualizar(id: number, payload: Partial<CreateFichaPayload>): Observable<FichaMantencionBackend> {
     return this.http.patch<FichaMantencionBackend>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  eliminar(id: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.baseUrl}/${id}`);
   }
 }

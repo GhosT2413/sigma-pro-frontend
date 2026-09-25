@@ -19,11 +19,11 @@
     <tbody>
       @for (c of clientes(); track c.id) {
         <tr>
-          <td>{{ c.nombreCompleto }}</td>
-          <td>{{ c.rut ?? '—' }}</td>
-          <td>{{ c.email ?? '—' }}</td>
-          <td>{{ c.telefono ?? '—' }}</td>
-          <td class="clientes__acciones">
+          <td data-label="Nombre">{{ c.nombreCompleto }}</td>
+          <td data-label="RUT">{{ c.rut ?? '—' }}</td>
+          <td data-label="Email">{{ c.email ?? '—' }}</td>
+          <td data-label="Teléfono">{{ c.telefono ?? '—' }}</td>
+          <td class="clientes__acciones" data-label="Acciones">
             <a [routerLink]="['/vehiculos']" [queryParams]="{ clienteId: c.id }" class="sigma-btn sigma-btn--outline">Ver vehículos</a>
             <a [routerLink]="['/clientes', c.id, 'editar']" class="sigma-btn sigma-btn--outline">Editar</a>
             <button class="sigma-btn sigma-btn--danger" (click)="eliminar(c)">Eliminar</button>

@@ -12,13 +12,15 @@ import { PrediccionIa } from '../../../core/models/prediccion.model';
 import { UpdateVehiculoPayload, TipoUso, EstadoVehiculo, CreateVehiculoPayload } from '../../../core/models/vehiculo.model';
 import { Ficha } from '../../../core/models/mantencion.model';
 import { Alerta, EstadoAlerta } from '../../../core/models/alerta.model';
+import { KilometrajeFormatDirective } from '../../../shared/directives/kilometraje-format.directive';
+import { PatenteFormatDirective } from '../../../shared/directives/patente-format.directive';
 
 // POST /vehiculos (crear), PATCH /vehiculos/:id (editar datos generales),
 // PATCH /vehiculos/:id/kilometraje (único canal para el odómetro, con su regla de negocio).
 @Component({
   selector: 'sigma-vehiculo-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, KilometrajeFormatDirective, PatenteFormatDirective],
   templateUrl: './vehiculo-form.component.html',
   styleUrl: './vehiculo-form.component.scss',
 })
@@ -36,14 +38,25 @@ export class VehiculoFormComponent {
   readonly vehiculoId = signal<number | null>(null);
   readonly cargando = signal(false);
   readonly guardando = signal(false);
+  readonly cargandoCliente = signal(false);
   readonly error = signal<string | null>(null);
+  readonly mensajeExito = signal<string | null>(null);
 
   // El Cliente puede editar SU vehículo, pero nunca a qué cliente está asociado
   // (eso evita que reasigne el vehículo a otro cliente desde el formulario).
   readonly esCliente = computed(() => this.auth.rol() === 'CLIENTE');
   readonly esPersonalTaller = computed(() => !this.esCliente());
   readonly clienteNombre = signal<string | null>(null);
-  readonly errorSinPerfilCliente = signal(false);
+  readonly clienteRut = signal<string | null>(null);
+
+  readonly clienteDisplay = computed(() => {
+    const nombre = this.clienteNombre();
+    const rut = this.clienteRut();
+    if (!nombre) return 'Tu perfil de cliente';
+    return rut ? `${nombre} - ${rut}` : nombre;
+  });
+
+  readonly rutaBase = computed(() => (this.route.snapshot.pathFromRoot.some((r) => r.routeConfig?.path === 'admin') ? '/admin/vehiculos' : '/vehiculos'));
 
   readonly form = this.fb.nonNullable.group({
     cliente_id: [null as number | null, Validators.required],
@@ -57,6 +70,8 @@ export class VehiculoFormComponent {
     estado: ['ACTIVO' as EstadoVehiculo],
     // Solo se usa al crear; al editar, el kilometraje se guarda con formKilometraje.
     kilometraje_actual: [0, [Validators.required, Validators.min(0)]],
+    // RUT del cliente (solo para CLIENTE al crear su primer vehículo)
+    rut: [''],
   });
 
   // --- Actualizar kilometraje (edición) ---
@@ -79,11 +94,11 @@ export class VehiculoFormComponent {
   readonly guardandoAlertaId = signal<number | null>(null);
 
   constructor() {
-    if (this.esCliente()) {
-      this.form.controls.cliente_id.disable();
-    }
+    // Para clientes: NO deshabilitar el control (necesita enviarse en el submit)
+    // En el template se muestra como solo-lectura visual
 
     const idParam = this.route.snapshot.paramMap.get('id');
+
     if (idParam) {
       const id = Number(idParam);
       this.vehiculoId.set(id);
@@ -101,6 +116,7 @@ export class VehiculoFormComponent {
             estado: v.estado,
           });
           this.clienteNombre.set(v.clienteNombre ?? null);
+          // Note: v doesn't include RUT from backend, would need additional fetch if needed
           this.kilometrajeActualRegistrado.set(v.kilometrajeActual);
           this.formKilometraje.patchValue({ nuevo_kilometraje: v.kilometrajeActual });
           this.cargando.set(false);
@@ -116,9 +132,34 @@ export class VehiculoFormComponent {
           if (cliente) {
             this.form.controls.cliente_id.setValue(cliente.id);
             this.clienteNombre.set(cliente.nombreCompleto);
-          } else {
-            this.errorSinPerfilCliente.set(true);
-          }
+            this.clienteRut.set(cliente.rut ?? null);
+} else {
+            // Auto-crear perfil de Cliente ligado al Usuario
+            // NOTA: NO enviar usuario_id, el backend lo deriva del token JWT
+            this.clienteService.crear({
+              nombre_completo: this.auth.usuario()?.nombreCompleto || '',
+              email: this.auth.usuario()?.email || '',
+              telefono: this.auth.usuario()?.telefono || undefined,
+            }).subscribe({
+              next: (res) => {
+                this.form.controls.cliente_id.setValue(res.cliente.id);
+                this.clienteNombre.set(res.cliente.nombre_completo);
+                this.clienteRut.set(res.cliente.rut ?? null);
+                this.crearVehiculo();
+              },
+              error: (err) => {
+                // Mostrar error real del backend
+                const msg = err?.error?.message;
+                if (Array.isArray(msg)) {
+                  this.error.set(msg.join('. '));
+                } else if (typeof msg === 'string') {
+                  this.error.set(msg);
+                } else {
+                  this.error.set('No se pudo crear tu perfil de cliente automáticamente.');
+                }
+              },
+            });
+}
         });
       }
     }
@@ -166,28 +207,118 @@ export class VehiculoFormComponent {
   }
 
   private crear(): void {
+    // Para clientes: asegurar que cliente_id esté seteado antes de validar
+    if (this.esCliente() && !this.form.controls.cliente_id.value) {
+      const usuarioId = this.auth.usuario()?.id;
+      const userEmail = this.auth.usuario()?.email;
+      if (usuarioId && userEmail) {
+        this.cargandoCliente.set(true);
+        this.clienteService.obtenerPorUsuarioId(usuarioId).subscribe({
+          next: (cliente) => {
+            if (cliente) {
+              this.form.controls.cliente_id.setValue(cliente.id);
+              this.crearVehiculo();
+            } else {
+              // Fallback: buscar por email por si el usuario_id no coincide
+              this.clienteService.obtenerPorEmail(userEmail).subscribe({
+                next: (clientePorEmail) => {
+                  if (clientePorEmail) {
+                    this.form.controls.cliente_id.setValue(clientePorEmail.id);
+                    this.crearVehiculo();
+                  } else {
+                    this.autoCrearClienteYVehiculo(usuarioId);
+                  }
+                },
+                error: () => this.autoCrearClienteYVehiculo(usuarioId),
+              });
+            }
+          },
+          error: (err) => {
+            // Si falla la búsqueda (ej. error de red, backend caído), intentar auto-crear
+            console.warn('Error obteniendo perfil de cliente, intentando auto-crear:', err);
+            this.autoCrearClienteYVehiculo(usuarioId);
+          },
+        });
+        return;
+      }
+    }
+
+    this.crearVehiculo();
+  }
+
+  private autoCrearClienteYVehiculo(usuarioId: number): void {
+    // Auto-crear perfil - payload explícito sin spread
+    // NOTA: NO enviar usuario_id, el backend lo deriva del token JWT
+    const raw = this.form.getRawValue();
+    const clientePayload = {
+      nombre_completo: String(this.auth.usuario()?.nombreCompleto || ''),
+      email: String(this.auth.usuario()?.email || ''),
+      rut: raw.rut?.trim().toUpperCase() || undefined,
+    } as any;
+    
+    if (this.auth.usuario()?.telefono) {
+      clientePayload.telefono = String(this.auth.usuario()?.telefono);
+    }
+    
+    this.clienteService.crear(clientePayload).subscribe({
+      next: (res) => {
+        this.form.controls.cliente_id.setValue(res.cliente.id);
+        this.crearVehiculo();
+      },
+      error: (err) => {
+        this.cargandoCliente.set(false);
+        const msg = err?.error?.message;
+        if (Array.isArray(msg)) {
+          this.error.set(msg.join('. '));
+        } else if (typeof msg === 'string') {
+          this.error.set(msg);
+        } else {
+          this.error.set('No se pudo crear tu perfil de cliente automáticamente.');
+        }
+      },
+    });
+  }
+
+private crearVehiculo(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      return;
-    }
-    if (this.esCliente() && !this.form.controls.cliente_id.value) {
-      this.error.set('No encontramos tu perfil de cliente todavía. Espera un momento o recarga la página.');
       return;
     }
 
     this.guardando.set(true);
     this.error.set(null);
+    this.mensajeExito.set(null);
     const raw = this.form.getRawValue();
-    const payload: CreateVehiculoPayload = { ...raw, patente: raw.patente.toUpperCase(), cliente_id: raw.cliente_id! };
+    
+    // Construcción manual absoluta - SOLO las 9 propiedades exactas permitidas
+    const payload: CreateVehiculoPayload = {
+      cliente_id: Number(raw.cliente_id),
+      patente: String(raw.patente).toUpperCase(),
+      marca: String(raw.marca),
+      modelo: String(raw.modelo),
+    } as CreateVehiculoPayload;
+
+    // Campos opcionales - solo agregar si tienen valor
+    if (raw.anio && raw.anio > 0) payload.anio = Number(raw.anio);
+    if (raw.vin && raw.vin.trim()) payload.vin = String(raw.vin).trim();
+    payload.kilometraje_actual = Number(raw.kilometraje_actual) || 0;
+    if (raw.tipo_uso) payload.tipo_uso = raw.tipo_uso as any;
+    if (raw.estado) payload.estado = raw.estado as any;
 
     this.vehiculoService.crear(payload).subscribe({
-      next: () => {
+      next: (res) => {
         this.guardando.set(false);
-        this.router.navigate(['/vehiculos']);
+        this.mensajeExito.set(res.mensaje || 'El vehículo fue creado exitosamente.');
+
+        setTimeout(() => {
+          this.router.navigate([this.rutaBase()]);
+        }, 1200);
       },
       error: (err) => {
         this.guardando.set(false);
-        this.error.set(err?.status === 400 ? 'Ya existe un vehículo con esa patente.' : 'No se pudo crear el vehículo.');
+        // Usar el mensaje del backend si está disponible
+        const backendMessage = err?.error?.message;
+        this.error.set(backendMessage || (err?.status === 400 ? 'Ya existe un vehículo con esa patente.' : 'No se pudo crear el vehículo.'));
       },
     });
   }
@@ -203,6 +334,7 @@ export class VehiculoFormComponent {
 
     this.guardando.set(true);
     this.error.set(null);
+    this.mensajeExito.set(null);
     const raw = this.form.getRawValue();
     const payload: UpdateVehiculoPayload = {
       patente: raw.patente.toUpperCase(),
@@ -220,13 +352,18 @@ export class VehiculoFormComponent {
     }
 
     this.vehiculoService.actualizar(this.vehiculoId()!, payload).subscribe({
-      next: () => {
+      next: (res) => {
         this.guardando.set(false);
-        this.router.navigate(['/vehiculos']);
+        this.mensajeExito.set(res.mensaje || 'El vehículo fue actualizado exitosamente.');
+
+        setTimeout(() => {
+          this.router.navigate([this.rutaBase()]);
+        }, 1200);
       },
       error: (err) => {
         this.guardando.set(false);
-        this.error.set(err?.status === 400 ? 'Ya existe un vehículo con esa patente.' : 'No se pudo guardar el vehículo.');
+        const backendMessage = err?.error?.message;
+        this.error.set(backendMessage || (err?.status === 400 ? 'Ya existe un vehículo con esa patente.' : 'No se pudo guardar el vehículo.'));
       },
     });
   }
@@ -247,16 +384,17 @@ export class VehiculoFormComponent {
       },
       error: (err) => {
         this.guardandoKm.set(false);
+        const backendMessage = err?.error?.message;
         this.errorKm.set(
-          err?.status === 400
+          backendMessage || (err?.status === 400
             ? 'El kilometraje no puede ser menor al actual registrado.'
-            : 'No se pudo actualizar el kilometraje.',
+            : 'No se pudo actualizar el kilometraje.'),
         );
       },
     });
   }
 
-  generarPrediccion(): void {
+generarPrediccion(): void {
     if (!this.vehiculoId()) return;
     const raw = this.form.getRawValue();
 
@@ -275,11 +413,17 @@ export class VehiculoFormComponent {
         next: (p) => {
           this.prediccion.set(p);
           this.generandoPrediccion.set(false);
-          // El backend evalúa umbrales al generar la predicción y puede crear una alerta nueva.
           this.refrescarAlertasVehiculo(this.vehiculoId()!);
         },
-        error: () => {
-          this.errorPrediccion.set('No se pudo generar la predicción (revisa la GEMINI_API_KEY del backend).');
+        error: (err) => {
+          console.error('Error generando predicción:', err);
+          let msg = err?.error?.message || err?.message || 'Error desconocido';
+          if (msg.includes('UNAVAILABLE') || msg.includes('high demand')) {
+            msg = 'Gemini está saturado (503). Intenta de nuevo en unos segundos.';
+          } else if (msg.includes('PERMISSION_DENIED') || msg.includes('denied access')) {
+            msg = 'La API Key no tiene acceso a Gemini. Verifica en Google AI Studio que el proyecto tenga la API habilitada.';
+          }
+          this.errorPrediccion.set(`No se pudo generar la predicción: ${msg}`);
           this.generandoPrediccion.set(false);
         },
       });

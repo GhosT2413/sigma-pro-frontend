@@ -5,27 +5,28 @@
 } @else {
 <div class="vehiculo-form__grid">
   <form class="sigma-card" [formGroup]="form" (ngSubmit)="guardar()">
+    @if (mensajeExito()) {
+    <div class="vehiculo-form__exito">
+      ✓ {{ mensajeExito() }} Redirigiendo a vehículos…
+    </div>
+    }
     <div class="sigma-form-field">
       <label for="cliente_id">Cliente propietario</label>
-      @if (esCliente()) {
-      <input id="cliente_id" type="text" [value]="clienteNombre() ?? 'Tu perfil de cliente'" disabled />
-      <small class="vehiculo-form__nota-campo">Este vehículo queda asociado a tu propio perfil — no puedes reasignarlo a
-        otro cliente.</small>
-      } @else {
+      @if (!esCliente()) {
       <input id="cliente_id" type="number" formControlName="cliente_id" />
       }
     </div>
 
-    @if (esCliente() && errorSinPerfilCliente()) {
-    <div class="vehiculo-form__error-general">
-      No encontramos un perfil de Cliente ligado a tu usuario todavía. Pídele a tu taller que te registre como cliente
-      antes de agregar un vehículo.
+    @if (esCliente()) {
+    <div class="sigma-form-field">
+      <label for="rut">RUT</label>
+      <input id="rut" type="text" formControlName="rut" sigmaRutFormat placeholder="12.345.678-9" style="text-transform: uppercase" />
     </div>
     }
 
     <div class="sigma-form-field">
       <label for="patente">Patente</label>
-      <input id="patente" formControlName="patente" placeholder="AA1234 / AAAA12" style="text-transform: uppercase" />
+      <input id="patente" formControlName="patente" sigmaPatenteFormat placeholder="AA1234 / AAAA12" style="text-transform: uppercase" />
       @if (form.controls.patente.touched && form.controls.patente.invalid) {
       <small class="vehiculo-form__error">Formato inválido (ej: AA1234 o AAAA12).</small>
       }
@@ -46,10 +47,6 @@
       </div>
     </div>
 
-    <div class="sigma-form-field">
-      <label for="vin">VIN</label>
-      <input id="vin" formControlName="vin" />
-    </div>
 
     <div class="vehiculo-form__fila">
       <div class="sigma-form-field">
@@ -72,7 +69,10 @@
       @if (!vehiculoId()) {
       <div class="sigma-form-field">
         <label for="kilometraje_actual">Kilometraje</label>
-        <input id="kilometraje_actual" type="number" formControlName="kilometraje_actual" />
+        <input id="kilometraje_actual" type="text" inputmode="numeric" sigmaKilometraje formControlName="kilometraje_actual" placeholder="Ej: 50.000" />
+        @if (form.controls.kilometraje_actual.touched && form.controls.kilometraje_actual.errors?.['min']) {
+        <small class="vehiculo-form__error">El kilometraje no puede ser negativo.</small>
+        }
       </div>
       }
     </div>
@@ -82,9 +82,9 @@
     }
 
     <div class="vehiculo-form__acciones">
-      <a routerLink="/vehiculos" class="sigma-btn sigma-btn--outline">Cancelar</a>
-      <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
-        {{ guardando() ? 'Guardando…' : vehiculoId() ? 'Guardar cambios' : 'Crear vehículo' }}
+      <a [routerLink]="rutaBase()" class="sigma-btn sigma-btn--outline">Cancelar</a>
+      <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando() || cargandoCliente()">
+        {{ cargandoCliente() ? 'Cargando perfil…' : guardando() ? 'Guardando…' : vehiculoId() ? 'Guardar cambios' : 'Crear vehículo' }}
       </button>
     </div>
   </form>
@@ -97,7 +97,10 @@
 
       <div class="sigma-form-field">
         <label for="nuevo_kilometraje">Nuevo kilometraje</label>
-        <input id="nuevo_kilometraje" type="number" formControlName="nuevo_kilometraje" />
+        <input id="nuevo_kilometraje" type="text" inputmode="numeric" sigmaKilometraje formControlName="nuevo_kilometraje" placeholder="Ej: 60.000" />
+        @if (formKilometraje.controls.nuevo_kilometraje.touched && formKilometraje.controls.nuevo_kilometraje.errors?.['min']) {
+        <small class="vehiculo-form__error">El kilometraje no puede ser negativo.</small>
+        }
       </div>
 
       @if (errorKm()) {
@@ -135,6 +138,7 @@
   </aside>
   }
 </div>
+}
 
 @if (vehiculoId()) {
 <section class="vehiculo-form__relacionados">
@@ -240,5 +244,4 @@
   </div>
   }
 </section>
-}
 }

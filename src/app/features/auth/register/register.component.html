@@ -41,7 +41,38 @@
       </select>
     </div>
 
-    @if (roleId === 2) {
+    @if (esCliente()) {
+      <div class="register__cliente-campos">
+        <div class="sigma-form-field">
+          <label for="rut">RUT (con dígito verificador) <span class="requerido">*</span></label>
+          <input id="rut" formControlName="rut" sigmaRutFormat placeholder="12.345.678-9" autocomplete="off" />
+          @if (form.controls.rut.touched && form.controls.rut.invalid) {
+            <small class="register__error-campo">
+              @if (form.controls.rut.errors?.['required']) { El RUT es obligatorio. }
+              @else if (form.controls.rut.errors?.['rutInvalido']) { RUT o dígito verificador inválido. }
+            </small>
+          }
+        </div>
+
+        <div class="sigma-form-field">
+          <label for="fecha_nacimiento">Fecha de nacimiento <span class="requerido">*</span></label>
+          <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" autocomplete="bday" />
+          @if (form.controls.fecha_nacimiento.touched && form.controls.fecha_nacimiento.invalid) {
+            <small class="register__error-campo">La fecha de nacimiento es obligatoria.</small>
+          }
+          @if (edad() !== null) {
+            <small class="register__edad" [class.register__edad--menor]="!mayorDeEdad()">
+              Edad: {{ edad() }} años
+              @if (!mayorDeEdad()) {
+                <span class="register__edad-alerta"> — Debes tener 17 años o más</span>
+              }
+            </small>
+          }
+        </div>
+      </div>
+    }
+
+    @if (roleId() === 2) {
       <div class="register__docs">
         <p class="register__docs-title">Documentación requerida</p>
 
@@ -86,7 +117,7 @@
       </div>
     }
 
-    @if (roleId === 3) {
+    @if (roleId() === 3) {
       <div class="register__docs">
         <p class="register__docs-title">Datos del Taller</p>
 
@@ -125,14 +156,16 @@
         <input type="checkbox" formControlName="hasAcceptedTerms" />
         <span class="register__checkbox-mark"></span>
         <span class="register__checkbox-text">
-          Acepto los <a href="javascript:void(0)">Términos y Condiciones</a> y la
-          <a href="javascript:void(0)">Política de Privacidad</a>
+          Acepto los <a href="javascript:void(0)" (click)="abrirTerminos()">Términos y Condiciones</a> y la
+          <a href="javascript:void(0)" (click)="abrirTerminos()">Política de Privacidad</a>
         </span>
       </label>
       @if (form.controls.hasAcceptedTerms.touched && form.controls.hasAcceptedTerms.invalid) {
         <small class="register__error-campo">Debes aceptar los Términos y Condiciones.</small>
       }
     </div>
+
+    <sigma-legal-modal></sigma-legal-modal>
 
     @if (error()) {
       <div class="register__error">{{ error() }}</div>

@@ -1,100 +1,199 @@
-<h2>{{ fichaId() ? 'Editar ficha de mantención' : 'Nueva ficha de mantención' }}</h2>
+<h2>{{ soloLectura() ? 'Ver ficha de mantención' : (fichaId() ? 'Editar ficha de mantención' : 'Nueva ficha de mantención') }}</h2>
 
 @if (cargando()) {
   <p>Cargando ficha…</p>
-} @else {
-<form class="sigma-card mantencion-form" [formGroup]="form" (ngSubmit)="guardar()">
-  <div class="mantencion-form__fila">
-    <div class="sigma-form-field">
-      <label for="vehiculo_id">ID Vehículo</label>
-      <input id="vehiculo_id" type="number" formControlName="vehiculo_id" />
-    </div>
-    <div class="sigma-form-field">
-      <label for="taller_id">ID Taller (opcional)</label>
-      <input id="taller_id" type="number" formControlName="taller_id" />
-    </div>
-    <div class="sigma-form-field">
-      <label for="mecanico_id">ID Mecánico (opcional)</label>
-      <input id="mecanico_id" type="number" formControlName="mecanico_id" />
-    </div>
-  </div>
+} @else if (soloLectura()) {
+  <!-- Modo solo lectura (CLIENTE): sin formulario, solo vista -->
+  <div class="sigma-card mantencion-form">
+    <div class="mantencion-form__fila">
+      @if (vehiculoInfo(); as info) {
+      <div class="vehiculo-info-card">
+        <h4>Datos del vehículo</h4>
+        <div class="vehiculo-info__grid">
+          <div class="vehiculo-info__item">
+            <div class="vehiculo-info__label vehiculo-info__label--patente">Patente</div>
+            <div class="vehiculo-info__value vehiculo-info__value--patente">{{ info.patente }}</div>
+          </div>
+          <div class="vehiculo-info__item">
+            <div class="vehiculo-info__label vehiculo-info__label--marca">Marca / Modelo / Año</div>
+            <div class="vehiculo-info__value">{{ info.marca }} {{ info.modelo }} ({{ info.anio }})</div>
+          </div>
+          <div class="vehiculo-info__item">
+            <div class="vehiculo-info__label vehiculo-info__label--dueno">Dueño del vehículo</div>
+            <div class="vehiculo-info__value">{{ info.clienteNombre }} @if (info.clienteRut) { <span> • {{ info.clienteRut }}</span> }</div>
+          </div>
+        </div>
+      </div>
+      }
 
-  <div class="mantencion-form__fila">
-    <div class="sigma-form-field">
-      <label for="kilometraje_ingreso">Kilometraje de ingreso</label>
-      <input id="kilometraje_ingreso" type="number" formControlName="kilometraje_ingreso" />
+      <div class="sigma-form-field">
+        <label>Kilometraje de ingreso</label>
+        <input type="text" [value]="form.controls.kilometraje_ingreso.value | number" disabled />
+      </div>
+      <div class="sigma-form-field">
+        <label>Kilometraje de salida</label>
+        <input type="text" [value]="form.controls.kilometraje_salida.value ? (form.controls.kilometraje_salida.value | number) : '—'" disabled />
+      </div>
+      <div class="sigma-form-field">
+        <label>Estado</label>
+        <select [value]="form.controls.estado.value" disabled>
+          <option value="EN_ESPERA">En espera</option>
+          <option value="EN_MANTENIMIENTO">En mantenimiento</option>
+          <option value="LISTO">Listo</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </div>
     </div>
-    <div class="sigma-form-field">
-      <label for="kilometraje_salida">Kilometraje de salida (opcional)</label>
-      <input id="kilometraje_salida" type="number" formControlName="kilometraje_salida" />
-    </div>
-    <div class="sigma-form-field">
-      <label for="estado">Estado</label>
-      <select id="estado" formControlName="estado">
-        <option value="EN_ESPERA">En espera</option>
-        <option value="EN_MANTENIMIENTO">En mantenimiento</option>
-        <option value="LISTO">Listo</option>
-        <option value="CANCELADO">Cancelado</option>
-      </select>
-    </div>
-  </div>
 
-  @if (form.controls.estado.value === 'LISTO') {
-    <p class="mantencion-form__nota">
-      ℹ️ Al guardar como "Listo", tu backend actualiza automáticamente el kilometraje del
-      vehículo usando el <strong>kilometraje de ingreso</strong> (así está su lógica hoy en
-      <code>fichas.service.ts</code>, no el de salida).
-    </p>
-  }
+    <div class="mantencion-form__fila">
+      <div class="sigma-form-field">
+        <label>Valor del arreglo</label>
+        <input type="text" [value]="'$' + form.controls.valor_arreglo.value" disabled />
+      </div>
+      <div class="sigma-form-field">
+        <label>Costo total de repuestos</label>
+        <input type="text" [value]="'$' + form.controls.costo_repuestos.value" disabled />
+      </div>
+      <div class="sigma-form-field">
+        <label>Costo total (calculado)</label>
+        <input type="text" [value]="'$' + costoTotal()" disabled />
+      </div>
+    </div>
 
-  <div class="mantencion-form__fila">
     <div class="sigma-form-field">
-      <label for="horas_trabajadas">Horas trabajadas</label>
-      <input id="horas_trabajadas" type="number" formControlName="horas_trabajadas" />
+      <label>Descripción</label>
+      <textarea rows="2" disabled>{{ form.controls.descripcion.value }}</textarea>
     </div>
     <div class="sigma-form-field">
-      <label for="valor_hora">Valor por hora</label>
-      <input id="valor_hora" type="number" formControlName="valor_hora" />
+      <label>Diagnóstico</label>
+      <textarea rows="2" disabled>{{ form.controls.diagnostico.value }}</textarea>
     </div>
     <div class="sigma-form-field">
-      <label>Costo mano de obra (calculado)</label>
-      <input type="text" [value]="'$' + costoManoObra()" disabled />
+      <label>Trabajo realizado</label>
+      <textarea rows="2" disabled>{{ form.controls.trabajo_realizado.value }}</textarea>
     </div>
-  </div>
 
-  <div class="mantencion-form__fila">
-    <div class="sigma-form-field">
-      <label for="costo_repuestos">Costo total de repuestos</label>
-      <input id="costo_repuestos" type="number" formControlName="costo_repuestos" />
-    </div>
-    <div class="sigma-form-field">
-      <label>Costo total (calculado)</label>
-      <input type="text" [value]="'$' + costoTotal()" disabled />
-    </div>
-  </div>
-
-  <div class="sigma-form-field">
-    <label for="descripcion">Descripción</label>
-    <textarea id="descripcion" formControlName="descripcion" rows="2"></textarea>
-  </div>
-  <div class="sigma-form-field">
-    <label for="diagnostico">Diagnóstico</label>
-    <textarea id="diagnostico" formControlName="diagnostico" rows="2"></textarea>
-  </div>
-  <div class="sigma-form-field">
-    <label for="trabajo_realizado">Trabajo realizado</label>
-    <textarea id="trabajo_realizado" formControlName="trabajo_realizado" rows="2"></textarea>
-  </div>
-
-  @if (error()) {
+    @if (error()) {
     <div class="mantencion-form__error">{{ error() }}</div>
-  }
+    }
 
-  <div class="mantencion-form__acciones">
-    <a routerLink="/mantenciones" class="sigma-btn sigma-btn--outline">Cancelar</a>
-    <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
-      {{ guardando() ? 'Guardando…' : fichaId() ? 'Guardar cambios' : 'Guardar ficha' }}
-    </button>
+    <div class="mantencion-form__acciones">
+      <button type="button" class="sigma-btn sigma-btn--primary" (click)="volver()">Volver</button>
+    </div>
   </div>
-</form>
+} @else {
+  <!-- Modo edición/creación (TALLER, MECANICO_INDEPENDIENTE, ADMIN) -->
+  <form class="sigma-card mantencion-form" [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="mantencion-form__fila">
+      @if (esTaller() && !fichaId()) {
+      <!-- Modo TALLER: buscar por patente -->
+      <div class="sigma-form-field">
+        <label for="patente">Patente del vehículo</label>
+        <div class="patente-input-group">
+          <input id="patente" type="text" sigmaPatenteFormat [(ngModel)]="patente" placeholder="AA1234 / AAAA12" style="text-transform: uppercase" [ngModelOptions]="{ standalone: true }" (input)="onPatenteChange()" />
+          <button type="button" class="sigma-btn sigma-btn--outline" (click)="buscarPorPatente()" [disabled]="!patente().trim()">Buscar</button>
+        </div>
+      </div>
+      } @else {
+      <!-- Modo normal (edición u otros roles): ID Vehículo -->
+      <div class="sigma-form-field">
+        <label for="vehiculo_id">ID Vehículo</label>
+        <input id="vehiculo_id" type="number" formControlName="vehiculo_id" />
+      </div>
+      }
+      <div class="sigma-form-field">
+        <label for="taller_id">ID Taller (opcional)</label>
+        <input id="taller_id" type="number" formControlName="taller_id" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="mecanico_id">ID Mecánico (opcional)</label>
+        <input id="mecanico_id" type="number" formControlName="mecanico_id" />
+      </div>
+    </div>
+
+    @if (vehiculoInfo(); as info) {
+    <div class="vehiculo-info-card">
+      <h4>Datos del vehículo</h4>
+      <div class="vehiculo-info__grid">
+        <div class="vehiculo-info__item">
+          <div class="vehiculo-info__label vehiculo-info__label--patente">Patente</div>
+          <div class="vehiculo-info__value vehiculo-info__value--patente">{{ info.patente }}</div>
+        </div>
+        <div class="vehiculo-info__item">
+          <div class="vehiculo-info__label vehiculo-info__label--marca">Marca / Modelo / Año</div>
+          <div class="vehiculo-info__value">{{ info.marca }} {{ info.modelo }} ({{ info.anio }})</div>
+        </div>
+        <div class="vehiculo-info__item">
+          <div class="vehiculo-info__label vehiculo-info__label--dueno">Dueño del vehículo</div>
+          <div class="vehiculo-info__value">{{ info.clienteNombre }} @if (info.clienteRut) { <span> • {{ info.clienteRut }}</span> }</div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <div class="mantencion-form__fila">
+      <div class="sigma-form-field">
+        <label for="kilometraje_ingreso">Kilometraje de ingreso</label>
+        <input id="kilometraje_ingreso" type="text" inputmode="numeric" sigmaKilometraje formControlName="kilometraje_ingreso" placeholder="Ej: 50.000" />
+        @if (form.controls.kilometraje_ingreso.touched && form.controls.kilometraje_ingreso.errors?.['min']) {
+        <small class="mantencion-form__error">El kilometraje no puede ser negativo.</small>
+        }
+      </div>
+      <div class="sigma-form-field">
+        <label for="kilometraje_salida">Kilometraje de salida (opcional)</label>
+        <input id="kilometraje_salida" type="text" inputmode="numeric" sigmaKilometraje formControlName="kilometraje_salida" placeholder="Ej: 50.000" />
+        @if (form.controls.kilometraje_salida.touched && form.controls.kilometraje_salida.errors?.['min']) {
+        <small class="mantencion-form__error">El kilometraje no puede ser negativo.</small>
+        }
+      </div>
+      <div class="sigma-form-field">
+        <label for="estado">Estado</label>
+        <select id="estado" formControlName="estado">
+          <option value="EN_ESPERA">En espera</option>
+          <option value="EN_MANTENIMIENTO">En mantenimiento</option>
+          <option value="LISTO">Listo</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mantencion-form__fila">
+      <div class="sigma-form-field">
+        <label for="valor_arreglo">Valor del arreglo</label>
+        <input id="valor_arreglo" type="number" formControlName="valor_arreglo" />
+      </div>
+      <div class="sigma-form-field">
+        <label for="costo_repuestos">Costo total de repuestos</label>
+        <input id="costo_repuestos" type="number" formControlName="costo_repuestos" />
+      </div>
+      <div class="sigma-form-field">
+        <label>Costo total (calculado)</label>
+        <input type="text" [value]="'$' + costoTotal()" disabled />
+      </div>
+    </div>
+
+    <div class="sigma-form-field">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" formControlName="descripcion" rows="2"></textarea>
+    </div>
+    <div class="sigma-form-field">
+      <label for="diagnostico">Diagnóstico</label>
+      <textarea id="diagnostico" formControlName="diagnostico" rows="2"></textarea>
+    </div>
+    <div class="sigma-form-field">
+      <label for="trabajo_realizado">Trabajo realizado</label>
+      <textarea id="trabajo_realizado" formControlName="trabajo_realizado" rows="2"></textarea>
+    </div>
+
+    @if (error()) {
+    <div class="mantencion-form__error">{{ error() }}</div>
+    }
+
+    <div class="mantencion-form__acciones">
+      <a routerLink="/mantenciones" class="sigma-btn sigma-btn--outline">Cancelar</a>
+      <button type="submit" class="sigma-btn sigma-btn--primary" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : fichaId() ? 'Guardar cambios' : 'Guardar ficha' }}
+      </button>
+    </div>
+  </form>
 }

@@ -1,7 +1,7 @@
 <aside class="sidebar" [class.sidebar--open]="abierto()">
   <div class="sidebar__header">
     <div class="sidebar__logo">SIGMA <span>Pro</span></div>
-    <button class="sidebar__cerrar" (click)="cerrar()">✕</button>
+    <button class="sidebar__cerrar" (click)="cerrar()" aria-label="Cerrar menú">✕</button>
   </div>
   <nav class="sidebar__nav">
     @for (item of itemsVisibles(); track item.ruta) {
@@ -10,5 +10,34 @@
         {{ item.etiqueta }}
       </a>
     }
+
+    @if (itemsAdminTest().length > 0) {
+      <div class="sidebar__seccion-admin">
+        <span class="sidebar__seccion-titulo">MODO ADMIN / TEST</span>
+      </div>
+      @for (item of itemsAdminTest(); track item.ruta) {
+        <a [routerLink]="item.ruta" routerLinkActive="activo" class="sidebar__link sidebar__link--admin" (click)="cerrar()">
+          <span class="sidebar__icono">{{ item.icono }}</span>
+          {{ item.etiqueta }}
+        </a>
+      }
+    }
   </nav>
+
+  <!-- Logout button - always visible at bottom -->
+  <div class="sidebar__footer">
+    @if (auth.usuario(); as usuario) {
+      <div class="sidebar__usuario-info">
+        <div class="sidebar__usuario-avatar">{{ usuario.nombreCompleto.charAt(0).toUpperCase() }}</div>
+        <div class="sidebar__usuario-datos">
+          <strong class="sidebar__usuario-nombre">{{ usuario.nombreCompleto }}</strong>
+          <span class="sidebar__usuario-rol">{{ usuario.rol }}</span>
+        </div>
+      </div>
+    }
+    <button class="sidebar__logout" (click)="cerrarSesion()" aria-label="Cerrar sesión">
+      <span class="sidebar__logout-icon">⏻</span>
+      <span class="sidebar__logout-text">Cerrar sesión</span>
+    </button>
+  </div>
 </aside>
