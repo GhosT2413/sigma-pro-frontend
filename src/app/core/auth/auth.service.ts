@@ -15,6 +15,7 @@ import {
 } from '../models/usuario.model';
 import { ClienteService } from '../services/cliente.service';
 import { CreateClientePayload } from '../models/cliente.model';
+import { UsuarioService } from '../services/usuario.service';
 import { decodeJwtPayload } from './jwt.util';
 
 const TOKEN_KEY = 'sigma_pro_token';
@@ -32,6 +33,7 @@ export class AuthService {
     private readonly http: HttpClient,
     private readonly router: Router,
     private readonly clienteService: ClienteService,
+    private readonly usuarioService: UsuarioService,
   ) {}
 
   login(credenciales: LoginRequest) {
@@ -51,6 +53,7 @@ export class AuthService {
     return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register`, datos).pipe(
       tap((res) => {
         localStorage.setItem(TOKEN_KEY, res.access_token);
+        const rut = esCliente ? (datos as any).rut?.trim().toUpperCase() : undefined;
         const usuario: Usuario = {
           id: res.usuario.id,
           nombreCompleto: res.usuario.nombre_completo,
@@ -62,13 +65,14 @@ export class AuthService {
           rol: res.usuario.role.nombre as Rol,
           roleId: res.usuario.role.id,
         };
-        localStorage.setItem(USER_KEY, JSON.stringify(usuario));
-        this.usuarioSignal.set(usuario);
+        localStorage.setItem(USER_KEY, JSON.stringify({ ...usuario, rut }));
+        this.usuarioSignal.set({ ...usuario, rut } as any);
       }),
       switchMap((res) => {
         // Si es CLIENTE y tiene RUT, crear registro en tabla clientes
         if (esCliente && rut) {
           const clientePayload: CreateClientePayload = {
+            usuario_id: res.usuario.id,
             nombre_completo: res.usuario.nombre_completo,
             email: res.usuario.email,
             rut: rut.trim().toUpperCase(),
@@ -78,6 +82,29 @@ export class AuthService {
             tap(() => console.log('Cliente creado automáticamente tras registro')),
             catchError((err) => {
               console.warn('No se pudo crear cliente automáticamente:', err);
+              return of(null);
+            }),
+            switchMap(() => {
+              // Si se proporcionó fecha_nacimiento, guardarla en el usuario
+              if (fechaNacimiento) {
+                return this.usuarioService.actualizar(res.usuario.id, { fecha_nacimiento: fechaNacimiento }).pipe(
+                  tap((updatedUser) => {
+                    const usuarioActual = this.usuarioSignal();
+                    if (usuarioActual) {
+                      const usuarioActualizado: Usuario = {
+                        ...usuarioActual,
+                        fechaNacimiento: updatedUser.fecha_nacimiento,
+                      };
+                      localStorage.setItem(USER_KEY, JSON.stringify(usuarioActualizado));
+                      this.usuarioSignal.set(usuarioActualizado);
+                    }
+                  }),
+                  catchError((err) => {
+                    console.warn('No se pudo actualizar fecha_nacimiento:', err);
+                    return of(null);
+                  }),
+                );
+              }
               return of(null);
             }),
           );

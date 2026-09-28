@@ -51,6 +51,7 @@ export interface Usuario {
     nombre: string;
     rutEmpresa: string;
   } | null;
+  rut?: string;
 }
 
 export function mapUsuarioBackend(u: UsuarioBackend): Usuario {

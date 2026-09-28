@@ -62,7 +62,7 @@ export class PerfilComponent {
     // Reactivar/desactivar controles según modo edición
     effect(() => {
       const editando = this.editando();
-      const controlesEditables = ['email', 'telefono', 'fecha_nacimiento', 'rut'];
+      const controlesEditables = ['email', 'telefono'];
       controlesEditables.forEach((key) => {
         const control = this.form.get(key);
         if (control) {
@@ -108,35 +108,29 @@ export class PerfilComponent {
       this.clienteService.obtenerPorUsuarioId(usuario.id).pipe(
         switchMap((cliente) => {
           if (cliente) return of(cliente);
-          // Fallback: buscar por email
           return this.clienteService.obtenerPorEmail(usuario.email);
-        })
-      ).subscribe({
-        next: (cliente) => {
+        }),
+        switchMap((cliente) => {
           if (cliente) {
             this.cliente.set(cliente);
-            this.form.patchValue({
-              rut: cliente.rut ?? '',
-            });
-          }
-          // Si no tenemos fecha_nacimiento, intentar obtenerla del usuario individual
-          if (!usuario.fechaNacimiento) {
-            this.usuarioService.obtener(usuario.id).subscribe({
-              next: (u) => {
-                if (u.fechaNacimiento) {
-                  this.form.patchValue({ fecha_nacimiento: formatearFecha(u.fechaNacimiento) });
-                }
-                this.cargando.set(false);
-              },
-              error: () => this.cargando.set(false),
-            });
+            this.form.patchValue({ rut: cliente.rut ?? '' });
           } else {
-            this.cargando.set(false);
+            // Fallback: usar RUT del usuario autenticado (guardado en localStorage tras registro)
+            const rutUsuario = this.usuarioActual()?.rut;
+            if (rutUsuario) {
+              this.form.patchValue({ rut: rutUsuario });
+            }
           }
-        },
-        error: () => {
+          return this.usuarioService.obtener(usuario.id);
+        })
+      ).subscribe({
+        next: (u) => {
+          if (u.fechaNacimiento) {
+            this.form.patchValue({ fecha_nacimiento: formatearFecha(u.fechaNacimiento) });
+          }
           this.cargando.set(false);
         },
+        error: () => this.cargando.set(false),
       });
     } else {
       this.usuarioService.listar().subscribe({
@@ -146,7 +140,7 @@ export class PerfilComponent {
             this.form.patchValue({ telefono: propio.telefono });
           }
           if (propio?.fechaNacimiento) {
-            this.form.patchValue({ fecha_nacimiento: propio.fechaNacimiento });
+            this.form.patchValue({ fecha_nacimiento: formatearFecha(propio.fechaNacimiento) });
           }
           if (propio?.fotoPerfilUrl) {
             this.fotoPreview.set(propio.fotoPerfilUrl);
@@ -210,7 +204,6 @@ export class PerfilComponent {
     const payload = {
       email: raw.email.trim(),
       telefono: raw.telefono?.trim() || undefined,
-      fecha_nacimiento: raw.fecha_nacimiento || undefined,
       foto_perfil_url: this.fotoPreview() || undefined,
     };
 
