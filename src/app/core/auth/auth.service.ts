@@ -46,65 +46,44 @@ export class AuthService {
 
   register(datos: RegisterRequest) {
     // POST /auth/register devuelve { access_token, usuario } con el objeto usuario completo.
-    const esCliente = datos.role_id === 1;
-    const rut = esCliente ? (datos as any).rut : undefined;
-    const fechaNacimiento = esCliente ? (datos as any).fecha_nacimiento : undefined;
+    const esCliente = Number(datos.role_id) === 1;
+    const rutIngresado = (datos as any).rut?.trim().toUpperCase();
+    const fechaNacimiento = (datos as any).fecha_nacimiento;
 
     return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register`, datos).pipe(
       tap((res) => {
         localStorage.setItem(TOKEN_KEY, res.access_token);
-        const rut = esCliente ? (datos as any).rut?.trim().toUpperCase() : undefined;
+        const rutFinal = res.usuario.rut || rutIngresado;
         const usuario: Usuario = {
           id: res.usuario.id,
           nombreCompleto: res.usuario.nombre_completo,
           email: res.usuario.email,
           telefono: res.usuario.telefono,
-          fechaNacimiento: res.usuario.fecha_nacimiento,
+          fechaNacimiento: res.usuario.fecha_nacimiento || fechaNacimiento,
           fotoPerfilUrl: res.usuario.foto_perfil_url,
           activo: true,
           rol: res.usuario.role.nombre as Rol,
           roleId: res.usuario.role.id,
+          rut: rutFinal,
         };
-        localStorage.setItem(USER_KEY, JSON.stringify({ ...usuario, rut }));
-        this.usuarioSignal.set({ ...usuario, rut } as any);
+        localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+        this.usuarioSignal.set(usuario);
       }),
       switchMap((res) => {
+        const rutFinal = res.usuario.rut || rutIngresado;
         // Si es CLIENTE y tiene RUT, crear registro en tabla clientes
-        if (esCliente && rut) {
+        if (esCliente && rutFinal) {
           const clientePayload: CreateClientePayload = {
             usuario_id: res.usuario.id,
             nombre_completo: res.usuario.nombre_completo,
             email: res.usuario.email,
-            rut: rut.trim().toUpperCase(),
+            rut: rutFinal,
             telefono: res.usuario.telefono,
           };
           return this.clienteService.crear(clientePayload).pipe(
             tap(() => console.log('Cliente creado automáticamente tras registro')),
             catchError((err) => {
               console.warn('No se pudo crear cliente automáticamente:', err);
-              return of(null);
-            }),
-            switchMap(() => {
-              // Si se proporcionó fecha_nacimiento, guardarla en el usuario
-              if (fechaNacimiento) {
-                return this.usuarioService.actualizar(res.usuario.id, { fecha_nacimiento: fechaNacimiento }).pipe(
-                  tap((updatedUser) => {
-                    const usuarioActual = this.usuarioSignal();
-                    if (usuarioActual) {
-                      const usuarioActualizado: Usuario = {
-                        ...usuarioActual,
-                        fechaNacimiento: updatedUser.fecha_nacimiento,
-                      };
-                      localStorage.setItem(USER_KEY, JSON.stringify(usuarioActualizado));
-                      this.usuarioSignal.set(usuarioActualizado);
-                    }
-                  }),
-                  catchError((err) => {
-                    console.warn('No se pudo actualizar fecha_nacimiento:', err);
-                    return of(null);
-                  }),
-                );
-              }
               return of(null);
             }),
           );

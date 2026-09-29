@@ -63,6 +63,8 @@ export class RegisterComponent {
   readonly roleId = signal(1);
 
   readonly esCliente = computed(() => this.roleId() === 1);
+  readonly esMecanicoIndependiente = computed(() => this.roleId() === 2);
+  readonly requiereRut = computed(() => this.roleId() === 1 || this.roleId() === 2);
 
   readonly edad = computed(() => {
     const fechaNac = this.form.get('fecha_nacimiento')?.value;
@@ -90,18 +92,23 @@ export class RegisterComponent {
 
     // Sincronizar validadores cuando cambia el rol
     effect(() => {
+      const requiereRut = this.requiereRut();
       const esCliente = this.esCliente();
       const rutControl = this.form.get('rut');
       const fechaControl = this.form.get('fecha_nacimiento');
 
-      if (esCliente) {
+      if (requiereRut) {
         rutControl?.setValidators([Validators.required, validarRutChileno]);
-        fechaControl?.setValidators([Validators.required]);
       } else {
         rutControl?.clearValidators();
-        fechaControl?.clearValidators();
       }
       rutControl?.updateValueAndValidity();
+
+      if (esCliente) {
+        fechaControl?.setValidators([Validators.required]);
+      } else {
+        fechaControl?.clearValidators();
+      }
       fechaControl?.updateValueAndValidity();
     });
   }
@@ -180,9 +187,13 @@ export class RegisterComponent {
         hasAcceptedTerms: raw.hasAcceptedTerms,
       };
 
+      // Agregar RUT para roles que lo requieren (Cliente y Mecánico Independiente)
+      if (this.requiereRut()) {
+        payload['rut'] = raw.rut?.trim().toUpperCase() || undefined;
+      }
+
       // Agregar campos de Cliente
       if (this.esCliente()) {
-        payload['rut'] = raw.rut?.trim().toUpperCase() || undefined;
         payload['fecha_nacimiento'] = raw.fecha_nacimiento || undefined;
       }
 

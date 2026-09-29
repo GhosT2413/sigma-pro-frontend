@@ -41,19 +41,21 @@
       </select>
     </div>
 
+    @if (requiereRut()) {
+      <div class="sigma-form-field">
+        <label for="rut">RUT (con dígito verificador) <span class="requerido">*</span></label>
+        <input id="rut" formControlName="rut" sigmaRutFormat placeholder="12.345.678-9" autocomplete="off" />
+        @if (form.controls.rut.touched && form.controls.rut.invalid) {
+          <small class="register__error-campo">
+            @if (form.controls.rut.errors?.['required']) { El RUT es obligatorio. }
+            @else if (form.controls.rut.errors?.['rutInvalido']) { RUT o dígito verificador inválido. }
+          </small>
+        }
+      </div>
+    }
+
     @if (esCliente()) {
       <div class="register__cliente-campos">
-        <div class="sigma-form-field">
-          <label for="rut">RUT (con dígito verificador) <span class="requerido">*</span></label>
-          <input id="rut" formControlName="rut" sigmaRutFormat placeholder="12.345.678-9" autocomplete="off" />
-          @if (form.controls.rut.touched && form.controls.rut.invalid) {
-            <small class="register__error-campo">
-              @if (form.controls.rut.errors?.['required']) { El RUT es obligatorio. }
-              @else if (form.controls.rut.errors?.['rutInvalido']) { RUT o dígito verificador inválido. }
-            </small>
-          }
-        </div>
-
         <div class="sigma-form-field">
           <label for="fecha_nacimiento">Fecha de nacimiento <span class="requerido">*</span></label>
           <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" autocomplete="bday" />

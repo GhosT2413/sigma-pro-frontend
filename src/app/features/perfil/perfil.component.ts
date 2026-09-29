@@ -34,6 +34,11 @@ export class PerfilComponent {
   readonly editando = signal(false);
 
   readonly esCliente = computed(() => this.usuarioActual()?.rol === 'CLIENTE');
+  readonly esMecanicoIndependiente = computed(() => this.usuarioActual()?.rol === 'MECANICO_INDEPENDIENTE');
+  readonly mostrarRut = computed(() => {
+    const rol = this.usuarioActual()?.rol;
+    return rol === 'CLIENTE' || rol === 'MECANICO_INDEPENDIENTE';
+  });
 
   readonly edad = computed(() => {
     const fechaNac = this.form.get('fecha_nacimiento')?.value;
@@ -98,6 +103,7 @@ export class PerfilComponent {
       email: usuario.email,
       telefono: usuario.telefono ?? '',
       fecha_nacimiento: formatearFecha(usuario.fechaNacimiento),
+      rut: usuario.rut ?? '',
     });
 
     if (usuario.fotoPerfilUrl) {
@@ -125,6 +131,9 @@ export class PerfilComponent {
         })
       ).subscribe({
         next: (u) => {
+          if (u.rut && !this.form.get('rut')?.value) {
+            this.form.patchValue({ rut: u.rut });
+          }
           if (u.fechaNacimiento) {
             this.form.patchValue({ fecha_nacimiento: formatearFecha(u.fechaNacimiento) });
           }
@@ -133,21 +142,43 @@ export class PerfilComponent {
         error: () => this.cargando.set(false),
       });
     } else {
-      this.usuarioService.listar().subscribe({
-        next: (usuarios) => {
-          const propio = usuarios.find((u) => u.id === usuario.id);
-          if (propio?.telefono) {
+      this.usuarioService.obtener(usuario.id).subscribe({
+        next: (propio) => {
+          if (propio.rut) {
+            this.form.patchValue({ rut: propio.rut });
+          }
+          if (propio.telefono) {
             this.form.patchValue({ telefono: propio.telefono });
           }
-          if (propio?.fechaNacimiento) {
+          if (propio.fechaNacimiento) {
             this.form.patchValue({ fecha_nacimiento: formatearFecha(propio.fechaNacimiento) });
           }
-          if (propio?.fotoPerfilUrl) {
+          if (propio.fotoPerfilUrl) {
             this.fotoPreview.set(propio.fotoPerfilUrl);
           }
           this.cargando.set(false);
         },
-        error: () => this.cargando.set(false),
+        error: () => {
+          this.usuarioService.listar().subscribe({
+            next: (usuarios) => {
+              const propio = usuarios.find((u) => u.id === usuario.id);
+              if (propio?.rut) {
+                this.form.patchValue({ rut: propio.rut });
+              }
+              if (propio?.telefono) {
+                this.form.patchValue({ telefono: propio.telefono });
+              }
+              if (propio?.fechaNacimiento) {
+                this.form.patchValue({ fecha_nacimiento: formatearFecha(propio.fechaNacimiento) });
+              }
+              if (propio?.fotoPerfilUrl) {
+                this.fotoPreview.set(propio.fotoPerfilUrl);
+              }
+              this.cargando.set(false);
+            },
+            error: () => this.cargando.set(false),
+          });
+        },
       });
     }
   }
@@ -215,6 +246,7 @@ export class PerfilComponent {
           telefono: res.telefono,
           fechaNacimiento: res.fecha_nacimiento,
           fotoPerfilUrl: res.foto_perfil_url,
+          rut: res.rut || usuario.rut,
         };
         this.auth['usuarioSignal'].set(usuarioActualizado);
         localStorage.setItem('sigma_pro_usuario', JSON.stringify(usuarioActualizado));

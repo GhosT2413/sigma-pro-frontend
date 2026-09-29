@@ -7,6 +7,8 @@
         <h2>Mi Perfil</h2>
         @if (esCliente()) {
           <span class="perfil__rol-badge-cliente">Cliente</span>
+        } @else if (esMecanicoIndependiente()) {
+          <span class="perfil__rol-badge-mecanico">Mecánico Independiente</span>
         }
       </div>
       <div class="perfil-header__acciones">
@@ -65,7 +67,7 @@
               <small class="perfil__campo-ayuda">El nombre no se puede modificar desde aquí.</small>
             </div>
 
-            @if (esCliente()) {
+            @if (mostrarRut()) {
               <div class="perfil__campo">
                 <label for="rut">🆔 RUT</label>
                 <div class="perfil__input-wrapper view-mode">

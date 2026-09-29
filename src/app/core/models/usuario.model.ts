@@ -17,6 +17,7 @@ export interface UsuarioBackend {
   telefono?: string;
   fecha_nacimiento?: string;
   foto_perfil_url?: string;
+  rut?: string;
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -65,6 +66,7 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
     activo: u.activo,
     rol: u.role?.nombre as Rol,
     roleId: u.role?.id,
+    rut: u.rut,
     tallerId: u.taller_id ?? u.taller?.id ?? null,
     taller: u.taller ? {
       id: u.taller.id,
@@ -80,6 +82,8 @@ export interface CreateUsuarioPayload {
   email: string;
   password_hash: string;
   telefono?: string;
+  rut?: string;
+  fecha_nacimiento?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
   taller_id?: number;
@@ -99,6 +103,7 @@ export interface UpdateUsuarioPayload {
   nombre_completo?: string;
   email?: string;
   telefono?: string;
+  rut?: string;
   fecha_nacimiento?: string;
   foto_perfil_url?: string;
   activo?: boolean;
@@ -121,6 +126,8 @@ export interface RegisterRequest {
   email: string;
   password_hash: string;
   telefono?: string;
+  rut?: string;
+  fecha_nacimiento?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
   taller_id?: number;
@@ -145,6 +152,7 @@ export interface RegisterResponse {
     telefono?: string;
     fecha_nacimiento?: string;
     foto_perfil_url?: string;
+    rut?: string;
     role: {
       id: number;
       nombre: string;
