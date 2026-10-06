@@ -1,0 +1,152 @@
+.inicio {
+  &__subtitulo {
+    color: var(--sigma-gray-medium);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  &__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    position: relative;
+    overflow: hidden;
+    padding: 1.75rem;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 0 4px 4px 0;
+    }
+
+    &:nth-child(1)::after { background: var(--sigma-mint); }
+    &:nth-child(2)::after { background: var(--sigma-orange); }
+    &:nth-child(3)::after { background: var(--sigma-pink); }
+    &:nth-child(4)::after { background: var(--sigma-black); }
+  }
+
+  &__valor {
+    font-size: 2.15rem;
+    font-weight: 800;
+    color: var(--sigma-black);
+    line-height: 1;
+    letter-spacing: -0.03em;
+
+    &--alerta {
+      color: var(--sigma-pink-dark);
+    }
+  }
+
+  &__etiqueta {
+    color: var(--sigma-gray-medium);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  &__link {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    color: var(--sigma-orange);
+
+    &:hover {
+      color: var(--sigma-orange-dark);
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 2rem;
+
+    p {
+      margin: 0;
+      color: var(--sigma-gray-medium);
+    }
+  }
+
+  &__vencimientos {
+    padding: 1.75rem;
+  }
+
+  &__vencimientos-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+      color: var(--sigma-black);
+    }
+  }
+
+  &__vehiculo {
+    display: block;
+    color: var(--sigma-gray-medium);
+    font-size: 0.8rem;
+    font-weight: 400;
+  }
+
+  &__fecha {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--sigma-black);
+  }
+}
+
+@media (max-width: 768px) {
+  .inicio__cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .inicio__card {
+    padding: 1.5rem;
+  }
+
+  .inicio__valor {
+    font-size: 1.9rem;
+  }
+
+  .inicio__acciones .sigma-btn {
+    flex: 1 1 45%;
+  }
+}
+
+@media (max-width: 480px) {
+  .inicio__card {
+    padding: 1.25rem;
+  }
+
+  .inicio__valor {
+    font-size: 1.7rem;
+  }
+
+  .inicio__etiqueta {
+    font-size: 0.8rem;
+  }
+}

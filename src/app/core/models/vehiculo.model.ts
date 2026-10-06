@@ -15,6 +15,9 @@ export interface VehiculoBackend {
   kilometraje_actual: number;
   tipo_uso: TipoUso;
   estado: EstadoVehiculo;
+  vencimiento_revision_tecnica?: string | null;
+  vencimiento_soap?: string | null;
+  vencimiento_permiso_circulacion?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +34,19 @@ export interface Vehiculo {
   kilometrajeActual: number;
   tipoUso: TipoUso;
   estado: EstadoVehiculo;
+  vencimientoRevisionTecnica?: string | null;
+  vencimientoSoap?: string | null;
+  vencimientoPermisoCirculacion?: string | null;
+}
+
+export function normalizarFechaVencimiento(valor?: string | null): string | null {
+  if (!valor) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return null;
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
 export function mapVehiculoBackend(v: VehiculoBackend): Vehiculo {
@@ -46,6 +62,9 @@ export function mapVehiculoBackend(v: VehiculoBackend): Vehiculo {
     kilometrajeActual: v.kilometraje_actual,
     tipoUso: v.tipo_uso,
     estado: v.estado,
+    vencimientoRevisionTecnica: normalizarFechaVencimiento(v.vencimiento_revision_tecnica),
+    vencimientoSoap: normalizarFechaVencimiento(v.vencimiento_soap),
+    vencimientoPermisoCirculacion: normalizarFechaVencimiento(v.vencimiento_permiso_circulacion),
   };
 }
 
@@ -60,6 +79,9 @@ export interface CreateVehiculoPayload {
   kilometraje_actual: number;
   tipo_uso?: TipoUso;
   estado?: EstadoVehiculo;
+  vencimiento_revision_tecnica?: string | null;
+  vencimiento_soap?: string | null;
+  vencimiento_permiso_circulacion?: string | null;
 }
 
 /** Body de PATCH /vehiculos/:id (update-vehiculo.dto.ts) — sin kilometraje_actual a propósito. */
@@ -72,6 +94,9 @@ export interface UpdateVehiculoPayload {
   vin?: string;
   tipo_uso?: TipoUso;
   estado?: EstadoVehiculo;
+  vencimiento_revision_tecnica?: string | null;
+  vencimiento_soap?: string | null;
+  vencimiento_permiso_circulacion?: string | null;
 }
 
 /** Body exacto de PATCH /vehiculos/:id/kilometraje (update-kilometraje.dto.ts). */

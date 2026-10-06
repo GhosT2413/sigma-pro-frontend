@@ -22,6 +22,22 @@
   gap: 1rem;
 }
 
+.vehiculo-form__documentos {
+  padding-top: 1.25rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--sigma-gray-light);
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: var(--sigma-black);
+  }
+
+  .vehiculo-form__nota-campo {
+    margin: 0.75rem 0 0;
+  }
+}
+
 .vehiculo-form__error {
   color: var(--sigma-pink-dark);
   font-size: var(--text-sm);

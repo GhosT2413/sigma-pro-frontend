@@ -7,7 +7,10 @@ import { VehiculoService } from '../../../core/services/vehiculo.service';
 import { ClienteService } from '../../../core/services/cliente.service';
 import { AlertaService } from '../../../core/services/alerta.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { UsuarioService } from '../../../core/services/usuario.service';
+import { TallerService } from '../../../core/services/taller.service';
 import { EstadoFicha } from '../../../core/models/mantencion.model';
+import { Usuario } from '../../../core/models/usuario.model';
 import { KilometrajeFormatDirective } from '../../../shared/directives/kilometraje-format.directive';
 import { PatenteFormatDirective } from '../../../shared/directives/patente-format.directive';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -26,6 +29,8 @@ export class MantencionFormComponent {
   private readonly clienteService = inject(ClienteService);
   private readonly alertaService = inject(AlertaService);
   private readonly auth = inject(AuthService);
+  private readonly usuarioService = inject(UsuarioService);
+  private readonly tallerService = inject(TallerService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -34,12 +39,18 @@ export class MantencionFormComponent {
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
   readonly esTaller = computed(() => this.auth.rol() === 'TALLER');
+  readonly esMecanicoIndependiente = computed(() => this.auth.rol() === 'MECANICO_INDEPENDIENTE');
   readonly esCliente = computed(() => this.auth.rol() === 'CLIENTE');
   // Modo solo lectura (ruta /ver para CLIENTE)
   readonly soloLectura = computed(() => this.route.snapshot.url.some(s => s.path === 'ver'));
 
   // Para TALLER: usamos patente en lugar de ID
   readonly patente = signal<string>('');
+
+  // Campos con NOMBRE (reemplazan a "ID Taller" / "ID Mecánico" para TALLER y MECANICO_INDEPENDIENTE)
+  readonly nombreTaller = signal<string>('');
+  readonly nombreMecanico = signal<string>('');
+  readonly mecanicosEquipo = signal<Usuario[]>([]);
 
   readonly form = this.fb.nonNullable.group({
     vehiculo_id: [null as number | null, Validators.required],
@@ -86,6 +97,10 @@ export class MantencionFormComponent {
             estado: f.estado,
           });
           this.cargarInfoVehiculo(f.vehiculoId);
+          // Resuelve Nombre Taller / Nombre Mecánico según el rol (crear y editar)
+          if (!isVer) {
+            this.inicializarAsignacion();
+          }
           // Si es modo solo lectura, deshabilitar todos los campos
           if (isVer || this.soloLectura()) {
             this.form.disable();
@@ -102,7 +117,114 @@ export class MantencionFormComponent {
         this.form.patchValue({ vehiculo_id: vehiculoId });
         this.cargarInfoVehiculo(vehiculoId);
       }
+      this.inicializarAsignacion();
     }
+  }
+
+  /**
+   * Prepara los campos con nombre según el rol que crea/edita la ficha:
+   * - TALLER: Nombre Taller (propio, solo lectura) + selector de Mecánico de su equipo.
+   * - MECANICO_INDEPENDIENTE: Nombre Mecánico (él mismo, solo lectura).
+   */
+  private inicializarAsignacion(): void {
+    if (this.esTaller()) {
+      this.cargarTallerYEquipo();
+    }
+    if (this.esMecanicoIndependiente()) {
+      this.asignarMecanicoPropio();
+    }
+  }
+
+  /** Rol MECANICO_INDEPENDIENTE: quien atiende el vehículo es el propio usuario. */
+  private asignarMecanicoPropio(): void {
+    const usuario = this.auth.usuario();
+    if (!usuario) {
+      return;
+    }
+
+    const actual = this.form.controls.mecanico_id.value;
+    if (actual === null || actual === usuario.id) {
+      this.form.controls.mecanico_id.setValue(usuario.id);
+      this.nombreMecanico.set(usuario.nombreCompleto);
+      return;
+    }
+
+    // La ficha ya tenía asignado a otro mecánico: mostramos su nombre sin pisar el dato.
+    this.nombreMecanico.set(`Mecánico #${actual}`);
+    this.usuarioService.obtener(actual).subscribe({
+      next: (m) => this.nombreMecanico.set(m.nombreCompleto),
+      error: () => {},
+    });
+  }
+
+  /** Rol TALLER: resuelve el nombre del taller propio y carga su equipo de mecánicos. */
+  private cargarTallerYEquipo(): void {
+    const usuario = this.auth.usuario();
+    if (!usuario) {
+      return;
+    }
+
+    const idEnFicha = this.form.controls.taller_id.value;
+    const idObjetivo = idEnFicha ?? usuario.tallerId ?? null;
+
+    if (idObjetivo === null) {
+      // Sin taller en la sesión: buscamos el taller asociado a este usuario.
+      this.tallerService.buscarPorUsuario(usuario.id).subscribe({
+        next: (taller) =>
+          taller ? this.aplicarTaller(taller.id, taller.nombre) : this.aplicarTaller(null, usuario.nombreCompleto),
+        error: () => this.aplicarTaller(null, usuario.nombreCompleto),
+      });
+      return;
+    }
+
+    if (usuario.tallerId === idObjetivo && usuario.taller?.nombre) {
+      this.aplicarTaller(idObjetivo, usuario.taller.nombre);
+      return;
+    }
+
+    this.tallerService.obtener(idObjetivo).subscribe({
+      next: (taller) => this.aplicarTaller(idObjetivo, taller.nombre),
+      error: () => this.aplicarTaller(idObjetivo, usuario.nombreCompleto),
+    });
+  }
+
+  private aplicarTaller(tallerId: number | null, nombre: string): void {
+    this.nombreTaller.set(nombre);
+    if (tallerId !== null && !this.form.controls.taller_id.value) {
+      this.form.controls.taller_id.setValue(tallerId);
+    }
+    this.cargarEquipoTaller();
+  }
+
+  /** Carga los mecánicos (rol MECANICO) del taller para el selector "Nombre Mecánico". */
+  private cargarEquipoTaller(): void {
+    const tallerId = this.form.controls.taller_id.value;
+    if (!tallerId) {
+      this.mecanicosEquipo.set([]);
+      return;
+    }
+
+    this.usuarioService.equipoTaller(tallerId).subscribe({
+      next: (equipo) => {
+        const mecanicos = equipo.filter((u) => u.roleId === 5);
+        this.mecanicosEquipo.set(mecanicos);
+        this.agregarMecanicoDeLaFicha(mecanicos);
+      },
+      error: () => this.mecanicosEquipo.set([]),
+    });
+  }
+
+  /** Al editar, si la ficha apunta a un mecánico que ya no está en el equipo, lo agrega como opción. */
+  private agregarMecanicoDeLaFicha(mecanicos: Usuario[]): void {
+    const actual = this.form.controls.mecanico_id.value;
+    if (!this.fichaId() || !actual || mecanicos.some((m) => m.id === actual)) {
+      return;
+    }
+
+    this.usuarioService.obtener(actual).subscribe({
+      next: (m) => this.mecanicosEquipo.update((lista) => [...lista, m]),
+      error: () => {},
+    });
   }
 
   private cargarInfoVehiculo(vehiculoId: number): void {

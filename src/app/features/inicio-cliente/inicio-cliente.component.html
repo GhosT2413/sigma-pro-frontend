@@ -1,0 +1,83 @@
+@if (auth.usuario(); as usuario) {
+  <h2>Hola, {{ usuario.nombreCompleto.split(' ')[0] }} 👋</h2>
+  <p class="inicio__subtitulo">Este es el resumen de tus vehículos y sus documentos</p>
+}
+
+@if (cargando()) {
+  <div class="sigma-loading">Cargando tu resumen…</div>
+} @else {
+  <section class="inicio__cards">
+    <div class="sigma-card inicio__card">
+      <span class="inicio__valor">{{ totalVehiculos() }}</span>
+      <span class="inicio__etiqueta">Mis vehículos</span>
+      <a routerLink="/vehiculos" class="inicio__link">Ver mis vehículos →</a>
+    </div>
+
+    <div class="sigma-card inicio__card">
+      <span class="inicio__valor">{{ vehiculosEnTaller() }}</span>
+      <span class="inicio__etiqueta">En taller ahora</span>
+    </div>
+
+    <div class="sigma-card inicio__card">
+      <span class="inicio__valor" [class.inicio__valor--alerta]="alertasPendientes() > 0">
+        {{ alertasPendientes() }}
+      </span>
+      <span class="inicio__etiqueta">Alertas pendientes</span>
+      <a routerLink="/alertas" class="inicio__link">Ver alertas →</a>
+    </div>
+
+    <div class="sigma-card inicio__card">
+      <span class="inicio__valor">${{ gastoTotal() | number: '1.0-0' }}</span>
+      <span class="inicio__etiqueta">Gasto total en mantenciones</span>
+      <a routerLink="/mantenciones" class="inicio__link">Ver historial →</a>
+    </div>
+  </section>
+
+  <section class="inicio__acciones">
+    <a routerLink="/vehiculos/nuevo" class="sigma-btn sigma-btn--primary">+ Nuevo vehículo</a>
+    <a routerLink="/vehiculos" class="sigma-btn sigma-btn--outline">Mis vehículos</a>
+    <a routerLink="/mantenciones" class="sigma-btn sigma-btn--outline">Mis fichas</a>
+    <a routerLink="/alertas" class="sigma-btn sigma-btn--outline">Mis alertas</a>
+  </section>
+
+  @if (sinVehiculos()) {
+    <div class="sigma-card inicio__vacio">
+      <p>Aún no tienes vehículos registrados.</p>
+      <a routerLink="/vehiculos/nuevo" class="sigma-btn sigma-btn--primary">Registrar mi primer vehículo</a>
+    </div>
+  } @else {
+    <section class="sigma-card inicio__vencimientos">
+      <div class="inicio__vencimientos-header">
+        <h3>Vencimientos de documentos</h3>
+        <a routerLink="/vehiculos" class="inicio__link">Administrar vehículos →</a>
+      </div>
+
+      <table class="sigma-table">
+        <thead>
+          <tr>
+            <th>Vehículo</th>
+            <th>Revisión técnica</th>
+            <th>SOAP</th>
+            <th>Permiso de circulación</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of vencimientos(); track item.vehiculo.id) {
+            <tr>
+              <td data-label="Vehículo">
+                <strong>{{ item.vehiculo.patente }}</strong>
+                <span class="inicio__vehiculo">{{ item.vehiculo.marca }} {{ item.vehiculo.modelo }}</span>
+              </td>
+              @for (doc of item.documentos; track doc.nombre) {
+                <td [attr.data-label]="doc.nombre">
+                  <span class="inicio__fecha">{{ formatearFecha(doc.estado.fecha) }}</span>
+                  <span class="sigma-badge" [ngClass]="badgeClases(doc.estado)">{{ textoDias(doc.estado) }}</span>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+}

@@ -72,6 +72,9 @@ export class VehiculoFormComponent {
     kilometraje_actual: [0, [Validators.required, Validators.min(0)]],
     // RUT del cliente (solo para CLIENTE al crear su primer vehículo)
     rut: [''],
+    vencimiento_revision_tecnica: [null as string | null],
+    vencimiento_soap: [null as string | null],
+    vencimiento_permiso_circulacion: [null as string | null],
   });
 
   // --- Actualizar kilometraje (edición) ---
@@ -114,6 +117,9 @@ export class VehiculoFormComponent {
             vin: v.vin,
             tipo_uso: v.tipoUso,
             estado: v.estado,
+            vencimiento_revision_tecnica: v.vencimientoRevisionTecnica ?? null,
+            vencimiento_soap: v.vencimientoSoap ?? null,
+            vencimiento_permiso_circulacion: v.vencimientoPermisoCirculacion ?? null,
           });
           this.clienteNombre.set(v.clienteNombre ?? null);
           // Note: v doesn't include RUT from backend, would need additional fetch if needed
@@ -304,6 +310,9 @@ private crearVehiculo(): void {
     payload.kilometraje_actual = Number(raw.kilometraje_actual) || 0;
     if (raw.tipo_uso) payload.tipo_uso = raw.tipo_uso as any;
     if (raw.estado) payload.estado = raw.estado as any;
+    if (raw.vencimiento_revision_tecnica) payload.vencimiento_revision_tecnica = raw.vencimiento_revision_tecnica;
+    if (raw.vencimiento_soap) payload.vencimiento_soap = raw.vencimiento_soap;
+    if (raw.vencimiento_permiso_circulacion) payload.vencimiento_permiso_circulacion = raw.vencimiento_permiso_circulacion;
 
     this.vehiculoService.crear(payload).subscribe({
       next: (res) => {
@@ -344,6 +353,9 @@ private crearVehiculo(): void {
       vin: raw.vin,
       tipo_uso: raw.tipo_uso,
       estado: raw.estado,
+      vencimiento_revision_tecnica: raw.vencimiento_revision_tecnica,
+      vencimiento_soap: raw.vencimiento_soap,
+      vencimiento_permiso_circulacion: raw.vencimiento_permiso_circulacion,
     };
     // El Cliente nunca manda cliente_id en la edición: el campo va deshabilitado
     // y no queremos que, aunque el backend aún no lo valide, el frontend se lo ofrezca.

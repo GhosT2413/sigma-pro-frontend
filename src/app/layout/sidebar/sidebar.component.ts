@@ -9,6 +9,7 @@ interface ItemMenu {
   etiqueta: string;
   icono: string;
   roles: Rol[];
+  etiquetaCliente?: string;
 }
 
 const TODOS: Rol[] = ['CLIENTE', 'MECANICO_INDEPENDIENTE', 'TALLER', 'ADMINISTRADOR'];
@@ -22,7 +23,7 @@ const CLIENTE_Y_MECANICO: Rol[] = ['CLIENTE', 'MECANICO_INDEPENDIENTE'];
 const CLIENTE_MECANICO_ADMIN: Rol[] = ['CLIENTE', 'MECANICO_INDEPENDIENTE', 'ADMINISTRADOR'];
 
 const MENU: ItemMenu[] = [
-  { ruta: '/dashboard', etiqueta: 'Dashboard', icono: '📊', roles: TODOS },
+  { ruta: '/dashboard', etiqueta: 'Dashboard', etiquetaCliente: 'Inicio', icono: '📊', roles: TODOS },
   // Cliente ve "Mis Vehículos"
   { ruta: '/vehiculos', etiqueta: 'Mis Vehículos', icono: '🚗', roles: SOLO_CLIENTE },
   // Clientes: solo ADMINISTRADOR (ni MECANICO_INDEPENDIENTE ni TALLER lo ven)
@@ -62,7 +63,10 @@ export class SidebarComponent {
   readonly itemsVisibles = computed(() => {
     const rol = this.auth.rol();
     if (!rol) return [];
-    return MENU.filter((item) => item.roles.includes(rol));
+    return MENU.filter((item) => item.roles.includes(rol)).map((item) => ({
+      ...item,
+      etiqueta: rol === 'CLIENTE' && item.etiquetaCliente ? item.etiquetaCliente : item.etiqueta,
+    }));
   });
 
   readonly itemsAdminTest = computed(() => {

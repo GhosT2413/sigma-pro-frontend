@@ -77,6 +77,25 @@
       }
     </div>
 
+    <div class="vehiculo-form__documentos">
+      <h3>Documentos del vehículo</h3>
+      <div class="vehiculo-form__fila">
+        <div class="sigma-form-field">
+          <label for="vencimiento_revision_tecnica">Venc. revisión técnica</label>
+          <input id="vencimiento_revision_tecnica" type="date" formControlName="vencimiento_revision_tecnica" />
+        </div>
+        <div class="sigma-form-field">
+          <label for="vencimiento_soap">Venc. SOAP</label>
+          <input id="vencimiento_soap" type="date" formControlName="vencimiento_soap" />
+        </div>
+        <div class="sigma-form-field">
+          <label for="vencimiento_permiso_circulacion">Venc. permiso de circulación</label>
+          <input id="vencimiento_permiso_circulacion" type="date" formControlName="vencimiento_permiso_circulacion" />
+        </div>
+      </div>
+      <p class="vehiculo-form__nota-campo">Fechas opcionales. Se usan para avisarte en "Inicio" cuando estén por vencer.</p>
+    </div>
+
     @if (error()) {
     <div class="vehiculo-form__error-general">{{ error() }}</div>
     }

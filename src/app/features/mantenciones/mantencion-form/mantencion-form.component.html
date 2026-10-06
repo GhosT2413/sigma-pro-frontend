@@ -101,6 +101,32 @@
         <input id="vehiculo_id" type="number" formControlName="vehiculo_id" />
       </div>
       }
+      @if (esTaller() || esMecanicoIndependiente()) {
+      <!-- Roles TALLER / MECANICO_INDEPENDIENTE: campos con NOMBRE en vez de IDs -->
+      @if (esTaller()) {
+      <div class="sigma-form-field">
+        <label for="nombre_taller">Nombre Taller</label>
+        <input id="nombre_taller" type="text" [value]="nombreTaller()" disabled />
+      </div>
+      }
+      <div class="sigma-form-field">
+        @if (esTaller()) {
+        <label for="mecanico_id">Nombre Mecánico</label>
+        <select id="mecanico_id" formControlName="mecanico_id">
+          <option [ngValue]="null">Seleccione un mecánico</option>
+          @for (m of mecanicosEquipo(); track m.id) {
+          <option [ngValue]="m.id">{{ m.nombreCompleto }}</option>
+          }
+        </select>
+        @if (mecanicosEquipo().length === 0) {
+        <small class="mantencion-form__ayuda">Aún no tienes mecánicos registrados en "Mi Equipo".</small>
+        }
+        } @else {
+        <label for="nombre_mecanico">Nombre Mecánico</label>
+        <input id="nombre_mecanico" type="text" [value]="nombreMecanico()" disabled />
+        }
+      </div>
+      } @else {
       <div class="sigma-form-field">
         <label for="taller_id">ID Taller (opcional)</label>
         <input id="taller_id" type="number" formControlName="taller_id" />
@@ -109,6 +135,7 @@
         <label for="mecanico_id">ID Mecánico (opcional)</label>
         <input id="mecanico_id" type="number" formControlName="mecanico_id" />
       </div>
+      }
     </div>
 
     @if (vehiculoInfo(); as info) {

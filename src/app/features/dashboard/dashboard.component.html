@@ -1,27 +1,33 @@
-@if (auth.usuario(); as usuario) {
-  <h2>Hola, {{ usuario.nombreCompleto.split(' ')[0] }} 👋</h2>
-  <p class="dashboard__subtitulo">Vista de {{ roleLabels[usuario.rol] }}</p>
-}
+<div class="dashboard">
+  @if (esCliente()) {
+    <sigma-inicio-cliente />
+  } @else {
+    @if (auth.usuario(); as usuario) {
+      <h2>Hola, {{ usuario.nombreCompleto.split(' ')[0] }} 👋</h2>
+      <p class="dashboard__subtitulo">Vista de {{ roleLabels[usuario.rol] }}</p>
+    }
 
-@if (cargando()) {
-  <p>Cargando métricas…</p>
-} @else if (metricas(); as m) {
-  <section class="dashboard__cards">
-    <div class="sigma-card dashboard__card">
-      <span class="dashboard__valor">{{ m.totalVehiculos }}</span>
-      <span class="dashboard__etiqueta">Vehículos totales</span>
-    </div>
-    <div class="sigma-card dashboard__card">
-      <span class="dashboard__valor">{{ m.vehiculosEnTaller }}</span>
-      <span class="dashboard__etiqueta">En mantenimiento ahora</span>
-    </div>
-    <div class="sigma-card dashboard__card">
-      <span class="dashboard__valor sigma-badge--rojo">{{ m.alertasActivas }}</span>
-      <span class="dashboard__etiqueta">Alertas pendientes</span>
-      <a routerLink="/alertas" class="dashboard__link">Ver alertas →</a>
-    </div>
-  </section>
-  <p class="dashboard__timestamp">Actualizado: {{ m.timestamp | date: 'dd-MM-yyyy HH:mm' }}</p>
-} @else {
-  <p>No fue posible cargar las métricas del dashboard.</p>
-}
+    @if (cargando()) {
+      <p>Cargando métricas…</p>
+    } @else if (metricas(); as m) {
+      <section class="dashboard__cards">
+        <div class="sigma-card dashboard__card">
+          <span class="dashboard__valor">{{ m.totalVehiculos }}</span>
+          <span class="dashboard__etiqueta">Vehículos totales</span>
+        </div>
+        <div class="sigma-card dashboard__card">
+          <span class="dashboard__valor">{{ m.vehiculosEnTaller }}</span>
+          <span class="dashboard__etiqueta">En mantenimiento ahora</span>
+        </div>
+        <div class="sigma-card dashboard__card">
+          <span class="dashboard__valor sigma-badge--rojo">{{ m.alertasActivas }}</span>
+          <span class="dashboard__etiqueta">Alertas pendientes</span>
+          <a routerLink="/alertas" class="dashboard__link">Ver alertas →</a>
+        </div>
+      </section>
+      <p class="dashboard__timestamp">Actualizado: {{ m.timestamp | date: 'dd-MM-yyyy HH:mm' }}</p>
+    } @else {
+      <p>No fue posible cargar las métricas del dashboard.</p>
+    }
+  }
+</div>
