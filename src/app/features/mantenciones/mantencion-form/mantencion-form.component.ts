@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MantencionService } from '../../../core/services/mantencion.service';
 import { VehiculoService } from '../../../core/services/vehiculo.service';
 import { ClienteService } from '../../../core/services/cliente.service';
@@ -18,7 +18,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'sigma-mantencion-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, KilometrajeFormatDirective, PatenteFormatDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, KilometrajeFormatDirective, PatenteFormatDirective],
   templateUrl: './mantencion-form.component.html',
   styleUrl: './mantencion-form.component.scss',
 })

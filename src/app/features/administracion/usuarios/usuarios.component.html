@@ -1,4 +1,14 @@
-<h2>Usuarios del sistema</h2>
+<div class="usuarios__header">
+  <h2>Usuarios del sistema</h2>
+  <button
+    type="button"
+    class="sigma-btn sigma-btn--sm sigma-btn--outline"
+    [disabled]="cargando()"
+    (click)="recargar()"
+  >
+    Actualizar lista
+  </button>
+</div>
 
 @if (cargando()) {
   <p>Cargando usuarios…</p>
@@ -20,7 +30,35 @@
           <td>{{ u.nombreCompleto }}</td>
           <td>{{ u.email }}</td>
           <td>{{ u.telefono ?? '—' }}</td>
-          <td>{{ roleLabels[u.rol] ?? u.rol }}</td>
+          <td>
+            @if (esAdmin() && rolesDisponibles().length) {
+              <div class="usuarios__rol-editor">
+                <select
+                  class="usuarios__rol-select"
+                  [attr.aria-label]="'Rol de ' + u.nombreCompleto"
+                  [disabled]="guardandoId() === u.id"
+                  (change)="seleccionarRol(u, $event)"
+                >
+                  @for (r of rolesDisponibles(); track r.id) {
+                    <option [value]="r.id" [selected]="r.id === rolElegido(u)">{{ r.label }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="sigma-btn sigma-btn--sm sigma-btn--primary"
+                  [disabled]="!tienePendiente(u) || guardandoId() === u.id"
+                  (click)="guardarRol(u)"
+                >
+                  {{ guardandoId() === u.id ? 'Guardando…' : 'Guardar' }}
+                </button>
+                @if (guardadoOkId() === u.id) {
+                  <span class="usuarios__rol-ok">Guardado</span>
+                }
+              </div>
+            } @else {
+              {{ roleLabels[u.rol] ?? u.rol }}
+            }
+          </td>
           <td>
             <span class="sigma-badge" [ngClass]="u.activo ? 'sigma-badge--verde' : 'sigma-badge--rojo'">
               {{ u.activo ? 'Activo' : 'Inactivo' }}

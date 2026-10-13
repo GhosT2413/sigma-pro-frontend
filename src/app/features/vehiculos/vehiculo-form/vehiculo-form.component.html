@@ -21,6 +21,9 @@
     <div class="sigma-form-field">
       <label for="rut">RUT</label>
       <input id="rut" type="text" formControlName="rut" sigmaRutFormat placeholder="12.345.678-9" style="text-transform: uppercase" />
+      @if (form.controls.rut.touched && form.controls.rut.invalid) {
+      <small class="vehiculo-form__error">RUT inválido (ej: 12.345.678-9).</small>
+      }
     </div>
     }
 

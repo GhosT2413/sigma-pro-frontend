@@ -14,13 +14,15 @@ import { Ficha } from '../../../core/models/mantencion.model';
 import { Alerta, EstadoAlerta } from '../../../core/models/alerta.model';
 import { KilometrajeFormatDirective } from '../../../shared/directives/kilometraje-format.directive';
 import { PatenteFormatDirective } from '../../../shared/directives/patente-format.directive';
+import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
+import { validarRutChileno } from '../../../shared/validators/rut.validator';
 
 // POST /vehiculos (crear), PATCH /vehiculos/:id (editar datos generales),
 // PATCH /vehiculos/:id/kilometraje (único canal para el odómetro, con su regla de negocio).
 @Component({
   selector: 'sigma-vehiculo-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, KilometrajeFormatDirective, PatenteFormatDirective],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, KilometrajeFormatDirective, PatenteFormatDirective, RutFormatDirective],
   templateUrl: './vehiculo-form.component.html',
   styleUrl: './vehiculo-form.component.scss',
 })
@@ -70,8 +72,9 @@ export class VehiculoFormComponent {
     estado: ['ACTIVO' as EstadoVehiculo],
     // Solo se usa al crear; al editar, el kilometraje se guarda con formKilometraje.
     kilometraje_actual: [0, [Validators.required, Validators.min(0)]],
-    // RUT del cliente (solo para CLIENTE al crear su primer vehículo)
-    rut: [''],
+    // RUT del cliente (solo para CLIENTE). Se autorellena con el RUT del usuario
+    // en sesión (el mismo que muestra el perfil); queda editable por si hay que corregirlo.
+    rut: ['', [validarRutChileno]],
     vencimiento_revision_tecnica: [null as string | null],
     vencimiento_soap: [null as string | null],
     vencimiento_permiso_circulacion: [null as string | null],
@@ -99,6 +102,15 @@ export class VehiculoFormComponent {
   constructor() {
     // Para clientes: NO deshabilitar el control (necesita enviarse en el submit)
     // En el template se muestra como solo-lectura visual
+
+    // Autorelleno inmediato del RUT con el del usuario en sesión (localStorage / perfil).
+    // Si más adelante el perfil de cliente trae otro RUT, prevalece ese.
+    if (this.esCliente()) {
+      const rutSesion = this.auth.usuario()?.rut;
+      if (rutSesion) {
+        this.form.controls.rut.setValue(rutSesion);
+      }
+    }
 
     const idParam = this.route.snapshot.paramMap.get('id');
 
@@ -136,38 +148,62 @@ export class VehiculoFormComponent {
       if (usuarioId) {
         this.clienteService.obtenerPorUsuarioId(usuarioId).subscribe((cliente) => {
           if (cliente) {
-            this.form.controls.cliente_id.setValue(cliente.id);
-            this.clienteNombre.set(cliente.nombreCompleto);
-            this.clienteRut.set(cliente.rut ?? null);
-} else {
-            // Auto-crear perfil de Cliente ligado al Usuario
-            // NOTA: NO enviar usuario_id, el backend lo deriva del token JWT
-            this.clienteService.crear({
-              nombre_completo: this.auth.usuario()?.nombreCompleto || '',
-              email: this.auth.usuario()?.email || '',
-              telefono: this.auth.usuario()?.telefono || undefined,
-            }).subscribe({
-              next: (res) => {
-                this.form.controls.cliente_id.setValue(res.cliente.id);
-                this.clienteNombre.set(res.cliente.nombre_completo);
-                this.clienteRut.set(res.cliente.rut ?? null);
-                this.crearVehiculo();
-              },
-              error: (err) => {
-                // Mostrar error real del backend
-                const msg = err?.error?.message;
-                if (Array.isArray(msg)) {
-                  this.error.set(msg.join('. '));
-                } else if (typeof msg === 'string') {
-                  this.error.set(msg);
+            this.asignarClientePropietario(cliente.id, cliente.nombreCompleto, cliente.rut ?? null);
+          } else {
+            // Sin vínculo por usuario_id: reutilizar el perfil que tenga el mismo
+            // email antes de auto-crear, así no se duplica el cliente del usuario.
+            const email = this.auth.usuario()?.email || '';
+            this.clienteService.obtenerPorEmail(email).subscribe({
+              next: (existente) => {
+                if (existente) {
+                  this.asignarClientePropietario(existente.id, existente.nombreCompleto, existente.rut ?? null);
                 } else {
-                  this.error.set('No se pudo crear tu perfil de cliente automáticamente.');
+                  this.crearPerfilClientePropietario();
                 }
               },
+              error: () => this.crearPerfilClientePropietario(),
             });
-}
+          }
         });
       }
+    }
+  }
+
+  private asignarClientePropietario(id: number, nombre: string, rut: string | null): void {
+    this.form.controls.cliente_id.setValue(id);
+    this.clienteNombre.set(nombre);
+    this.clienteRut.set(rut);
+    if (rut) {
+      this.form.controls.rut.setValue(rut);
+    }
+  }
+
+  /**
+   * Auto-crea el perfil de Cliente ligado al Usuario.
+   * NOTA: NO enviar usuario_id, el backend lo deriva del token JWT.
+   * Si el RUT ya es del mismo cliente, el backend devuelve el registro existente.
+   */
+  private crearPerfilClientePropietario(): void {
+    const usuario = this.auth.usuario();
+    this.clienteService.crear({
+      nombre_completo: usuario?.nombreCompleto || '',
+      email: usuario?.email || '',
+      telefono: usuario?.telefono || undefined,
+      rut: usuario?.rut || undefined,
+    }).subscribe({
+      next: (res) => this.asignarClientePropietario(res.cliente.id, res.cliente.nombre_completo, res.cliente.rut ?? null),
+      error: (err) => this.mostrarErrorBackend(err, 'No se pudo crear tu perfil de cliente automáticamente.'),
+    });
+  }
+
+  private mostrarErrorBackend(err: any, mensajePorDefecto: string): void {
+    const msg = err?.error?.message;
+    if (Array.isArray(msg)) {
+      this.error.set(msg.join('. '));
+    } else if (typeof msg === 'string') {
+      this.error.set(msg);
+    } else {
+      this.error.set(mensajePorDefecto);
     }
   }
 
@@ -223,6 +259,9 @@ export class VehiculoFormComponent {
           next: (cliente) => {
             if (cliente) {
               this.form.controls.cliente_id.setValue(cliente.id);
+              if (cliente.rut && !this.form.controls.rut.value) {
+                this.form.controls.rut.setValue(cliente.rut);
+              }
               this.crearVehiculo();
             } else {
               // Fallback: buscar por email por si el usuario_id no coincide
@@ -273,14 +312,7 @@ export class VehiculoFormComponent {
       },
       error: (err) => {
         this.cargandoCliente.set(false);
-        const msg = err?.error?.message;
-        if (Array.isArray(msg)) {
-          this.error.set(msg.join('. '));
-        } else if (typeof msg === 'string') {
-          this.error.set(msg);
-        } else {
-          this.error.set('No se pudo crear tu perfil de cliente automáticamente.');
-        }
+        this.mostrarErrorBackend(err, 'No se pudo crear tu perfil de cliente automáticamente.');
       },
     });
   }
