@@ -17,6 +17,7 @@
       @if (form.controls.password.touched && form.controls.password.invalid) {
         <small class="login__error-campo">Mínimo 6 caracteres.</small>
       }
+      <a class="login__olvide" routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
     </div>
 
     @if (error()) {

@@ -121,6 +121,22 @@ export interface LoginResponse {
   access_token: string;
 }
 
+/** POST /auth/forgot-password — respuesta genérica por seguridad (no revela si el email existe). */
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+/** POST /auth/reset-password (password-recovery.dto.ts). */
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface RegisterRequest {
   nombre_completo: string;
   email: string;

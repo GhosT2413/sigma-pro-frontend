@@ -82,6 +82,21 @@
     font-weight: 500;
   }
 
+  &__olvide {
+    display: block;
+    margin-top: 0.4rem;
+    text-align: right;
+    font-size: var(--text-xs);
+    color: var(--sigma-mint-dark);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--sigma-orange);
+      text-decoration: underline;
+    }
+  }
+
   &__register-link {
     text-align: center;
     margin-top: 1.25rem;

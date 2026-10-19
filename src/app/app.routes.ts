@@ -21,6 +21,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
+    // Recuperación de contraseña: el correo del backend linkea a /reset-password?token=...
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
+  },
+  {
+    // Debe llamarse exactamente /reset-password: es la ruta que genera el backend (email.service.ts)
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent),
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],

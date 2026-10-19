@@ -4,10 +4,13 @@ import { Router } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ForgotPasswordResponse,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
   Rol,
   Usuario,
   UsuarioBackend,
@@ -91,6 +94,23 @@ export class AuthService {
         return of(null);
       }),
     );
+  }
+
+  /**
+   * POST /auth/forgot-password: el backend envía un correo con el enlace de
+   * restablecimiento. Siempre responde lo mismo aunque el email no exista
+   * (anti-enumeración), así que el frontend solo puede mostrar ese mensaje.
+   */
+  forgotPassword(email: string) {
+    return this.http.post<ForgotPasswordResponse>(`${environment.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  /**
+   * POST /auth/reset-password: canjea el token del correo por una contraseña nueva.
+   * El token es de un solo uso y expira en 1 hora.
+   */
+  resetPassword(datos: ResetPasswordRequest) {
+    return this.http.post<ResetPasswordResponse>(`${environment.apiUrl}/auth/reset-password`, datos);
   }
 
   logout(): void {
