@@ -37,7 +37,13 @@ export class AuthService {
     private readonly router: Router,
     private readonly clienteService: ClienteService,
     private readonly usuarioService: UsuarioService,
-  ) {}
+  ) {
+    const token = this.getToken();
+    if (token) {
+      // Sincronizar el perfil y rol más reciente del backend sin obligar a reloguear
+      this.cargarPerfil(token).subscribe();
+    }
+  }
 
   login(credenciales: LoginRequest) {
     // POST /auth/login (auth.controller.ts) solo devuelve { access_token }, sin datos del usuario.
@@ -46,6 +52,14 @@ export class AuthService {
       switchMap((res) => this.cargarPerfil(res.access_token)),
     );
   }
+
+  loginWithGoogle(idToken: string, roleId?: number) {
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/google`, { idToken, role_id: roleId }).pipe(
+      tap((res) => localStorage.setItem(TOKEN_KEY, res.access_token)),
+      switchMap((res) => this.cargarPerfil(res.access_token)),
+    );
+  }
+
 
   register(datos: RegisterRequest) {
     // POST /auth/register devuelve { access_token, usuario } con el objeto usuario completo.
