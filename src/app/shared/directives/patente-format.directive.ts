@@ -14,7 +14,8 @@ export class PatenteFormatDirective {
   @HostListener('input')
   onInput(): void {
     const valorOriginal = this.el.nativeElement.value || '';
-    const formateado = this.formatearPatente(valorOriginal);
+    // Permitir letras (mayúsculas y minúsculas) y números sin forzar toUpperCase al teclear
+    const formateado = valorOriginal.replace(/[^a-zA-Z0-9]/g, '');
 
     if (valorOriginal !== formateado) {
       this.el.nativeElement.value = formateado;
@@ -28,15 +29,10 @@ export class PatenteFormatDirective {
   @HostListener('blur')
   onBlur(): void {
     const valorOriginal = this.el.nativeElement.value || '';
-    const formateado = this.formatearPatente(valorOriginal);
+    const formateado = valorOriginal.replace(/[^a-zA-Z0-9]/g, '');
     this.el.nativeElement.value = formateado;
     if (this.ngControl && this.ngControl.control) {
       this.ngControl.control.setValue(formateado, { emitEvent: false });
     }
-  }
-
-  private formatearPatente(valor: string): string {
-    if (!valor) return '';
-    return valor.replace(/[^A-Z0-9]/g, '').toUpperCase();
   }
 }

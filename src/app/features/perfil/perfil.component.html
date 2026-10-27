@@ -60,20 +60,36 @@
             <h3 class="perfil__seccion-titulo">Información personal</h3>
             
             <div class="perfil__campo">
-              <label for="nombre_completo">👤 Nombre completo</label>
-              <div class="perfil__input-wrapper view-mode">
+              <label for="nombre_completo">👤 Nombre completo <span class="requerido">*</span></label>
+              <div class="perfil__input-wrapper"
+                   [class.view-mode]="!editando() || !esGoogleUser()"
+                   [class.edit-mode]="editando() && esGoogleUser()"
+                   [class.has-error]="form.controls.nombre_completo.touched && form.controls.nombre_completo.invalid">
                 <input id="nombre_completo" formControlName="nombre_completo" />
               </div>
-              <small class="perfil__campo-ayuda">El nombre no se puede modificar desde aquí.</small>
+              @if (!esGoogleUser()) {
+                <small class="perfil__campo-ayuda">El nombre no se puede modificar desde aquí.</small>
+              }
+              @if (form.controls.nombre_completo.touched && form.controls.nombre_completo.invalid) {
+                <small class="perfil__campo-error">El nombre completo es requerido (mínimo 3 caracteres).</small>
+              }
             </div>
 
             @if (mostrarRut()) {
               <div class="perfil__campo">
                 <label for="rut">🆔 RUT</label>
-                <div class="perfil__input-wrapper view-mode">
-                  <input id="rut" formControlName="rut" placeholder="Sin RUT registrado" />
+                <div class="perfil__input-wrapper"
+                     [class.view-mode]="!editando() || !esGoogleUser()"
+                     [class.edit-mode]="editando() && esGoogleUser()"
+                     [class.has-error]="form.controls.rut.touched && form.controls.rut.invalid">
+                  <input id="rut" formControlName="rut" placeholder="Ej: 12.345.678-9" />
                 </div>
-                <small class="perfil__campo-ayuda">El RUT no se puede modificar.</small>
+                @if (!esGoogleUser()) {
+                  <small class="perfil__campo-ayuda">El RUT no se puede modificar.</small>
+                }
+                @if (form.controls.rut.touched && form.controls.rut.invalid) {
+                  <small class="perfil__campo-error">Formato de RUT chileno inválido (ej: 12.345.678-9 o 12345678-9).</small>
+                }
               </div>
             }
 

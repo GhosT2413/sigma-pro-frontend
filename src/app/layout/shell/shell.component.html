@@ -3,6 +3,15 @@
   <div class="shell__contenido">
     <sigma-topbar (toggleMenu)="sidebar.abrir()" />
     <main class="shell__main">
+      @if (mostrarAdvertenciaGoogle()) {
+        <div class="alerta-google-perfil">
+          <div class="alerta-google-perfil__icono">⚠️</div>
+          <div class="alerta-google-perfil__texto">
+            <strong>Advertencia:</strong> debes agregar tu rut y tu fecha de nacimiento.
+          </div>
+          <a routerLink="/perfil" class="alerta-google-perfil__btn">Completar ahora</a>
+        </div>
+      }
       <router-outlet />
     </main>
   </div>

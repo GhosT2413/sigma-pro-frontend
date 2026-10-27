@@ -40,6 +40,8 @@ export class PerfilComponent {
     return rol === 'CLIENTE' || rol === 'MECANICO_INDEPENDIENTE';
   });
 
+  readonly esGoogleUser = computed(() => !!this.usuarioActual()?.googleId);
+
   readonly edad = computed(() => {
     const fechaNac = this.form.get('fecha_nacimiento')?.value;
     if (!fechaNac) return null;
@@ -67,11 +69,23 @@ export class PerfilComponent {
     // Reactivar/desactivar controles según modo edición
     effect(() => {
       const editando = this.editando();
-      const controlesEditables = ['email', 'telefono'];
-      controlesEditables.forEach((key) => {
+      const esGoogle = this.esGoogleUser();
+      
+      // Email y teléfono siempre editables al editar
+      const controlesBase = ['email', 'telefono'];
+      controlesBase.forEach((key) => {
         const control = this.form.get(key);
         if (control) {
           editando ? control.enable() : control.disable();
+        }
+      });
+
+      // Si es usuario Google (o si edita), puede modificar nombre completo, rut y fecha de nacimiento
+      const controlesGoogle = ['nombre_completo', 'rut', 'fecha_nacimiento'];
+      controlesGoogle.forEach((key) => {
+        const control = this.form.get(key);
+        if (control) {
+          (editando && esGoogle) ? control.enable() : control.disable();
         }
       });
     });
@@ -232,16 +246,27 @@ export class PerfilComponent {
       return;
     }
 
-    const payload = {
+    const payload: any = {
       email: raw.email.trim(),
       telefono: raw.telefono?.trim() || undefined,
       foto_perfil_url: this.fotoPreview() || undefined,
     };
 
+    if (raw.nombre_completo?.trim()) {
+      payload.nombre_completo = raw.nombre_completo.trim();
+    }
+    if (raw.rut?.trim()) {
+      payload.rut = raw.rut.trim().toUpperCase();
+    }
+    if (raw.fecha_nacimiento) {
+      payload.fecha_nacimiento = raw.fecha_nacimiento;
+    }
+
     this.usuarioService.actualizar(usuario.id, payload).subscribe({
       next: (res) => {
         const usuarioActualizado: Usuario = {
           ...usuario,
+          nombreCompleto: res.nombre_completo || usuario.nombreCompleto,
           email: res.email,
           telefono: res.telefono,
           fechaNacimiento: res.fecha_nacimiento,
@@ -250,6 +275,44 @@ export class PerfilComponent {
         };
         this.auth['usuarioSignal'].set(usuarioActualizado);
         localStorage.setItem('sigma_pro_usuario', JSON.stringify(usuarioActualizado));
+
+        // Si es rol CLIENTE, sincronizar también la tabla clientes
+        if (usuario.rol === 'CLIENTE') {
+          const clienteExistente = this.cliente();
+          if (clienteExistente) {
+            this.clienteService.actualizar(clienteExistente.id, {
+              nombre_completo: usuarioActualizado.nombreCompleto,
+              rut: usuarioActualizado.rut,
+              email: usuarioActualizado.email,
+              telefono: usuarioActualizado.telefono,
+            }).subscribe({
+              next: (cRes) => {
+                if (cRes?.cliente) {
+                  this.cliente.set({
+                    ...clienteExistente,
+                    nombreCompleto: usuarioActualizado.nombreCompleto,
+                    rut: usuarioActualizado.rut || clienteExistente.rut,
+                    email: usuarioActualizado.email,
+                    telefono: usuarioActualizado.telefono,
+                  });
+                }
+              },
+              error: (cErr) => console.warn('No se pudo actualizar registro en clientes:', cErr),
+            });
+          } else if (usuarioActualizado.rut) {
+            this.clienteService.crear({
+              usuario_id: usuario.id,
+              nombre_completo: usuarioActualizado.nombreCompleto,
+              rut: usuarioActualizado.rut,
+              email: usuarioActualizado.email,
+              telefono: usuarioActualizado.telefono,
+            }).subscribe({
+              next: () => this.cargarDatos(),
+              error: (cErr) => console.warn('No se pudo crear cliente:', cErr),
+            });
+          }
+        }
+
         this.guardando.set(false);
         this.mensajeExito.set('Perfil actualizado correctamente.');
         this.editando.set(false);

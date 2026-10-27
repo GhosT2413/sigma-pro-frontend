@@ -18,6 +18,7 @@ export interface UsuarioBackend {
   fecha_nacimiento?: string;
   foto_perfil_url?: string;
   rut?: string;
+  google_id?: string;
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -53,6 +54,7 @@ export interface Usuario {
     rutEmpresa: string;
   } | null;
   rut?: string;
+  googleId?: string;
 }
 
 export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
@@ -67,6 +69,7 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
     rol: u.role?.nombre as Rol,
     roleId: u.role?.id,
     rut: u.rut,
+    googleId: u.google_id,
     tallerId: u.taller_id ?? u.taller?.id ?? null,
     taller: u.taller ? {
       id: u.taller.id,

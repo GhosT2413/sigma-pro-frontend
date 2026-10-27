@@ -29,7 +29,7 @@
 
     <div class="sigma-form-field">
       <label for="patente">Patente</label>
-      <input id="patente" formControlName="patente" sigmaPatenteFormat placeholder="AA1234 / AAAA12" style="text-transform: uppercase" />
+      <input id="patente" formControlName="patente" sigmaPatenteFormat placeholder="AA1234 / AAAA12" />
       @if (form.controls.patente.touched && form.controls.patente.invalid) {
       <small class="vehiculo-form__error">Formato inválido (ej: AA1234 o AAAA12).</small>
       }

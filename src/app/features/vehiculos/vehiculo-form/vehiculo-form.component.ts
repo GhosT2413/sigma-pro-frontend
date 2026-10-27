@@ -62,8 +62,8 @@ export class VehiculoFormComponent {
 
   readonly form = this.fb.nonNullable.group({
     cliente_id: [null as number | null, Validators.required],
-    // Criterio de aceptación RF-03: patente chilena AA1234 o AAAA12
-    patente: ['', [Validators.required, Validators.pattern(/^[A-Z]{2}\d{4}$|^[A-Z]{4}\d{2}$/)]],
+    // Criterio de aceptación RF-03: patente chilena AA1234 o AAAA12 (case-insensitive)
+    patente: ['', [Validators.required, Validators.pattern(/^[a-zA-Z]{2}\d{4}$|^[a-zA-Z]{4}\d{2}$/)]],
     marca: ['', Validators.required],
     modelo: ['', Validators.required],
     anio: [new Date().getFullYear(), Validators.min(1950)],

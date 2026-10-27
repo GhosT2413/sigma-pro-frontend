@@ -90,7 +90,7 @@
       <div class="sigma-form-field">
         <label for="patente">Patente del vehículo</label>
         <div class="patente-input-group">
-          <input id="patente" type="text" sigmaPatenteFormat [(ngModel)]="patente" placeholder="AA1234 / AAAA12" style="text-transform: uppercase" [ngModelOptions]="{ standalone: true }" (input)="onPatenteChange()" />
+          <input id="patente" type="text" sigmaPatenteFormat [(ngModel)]="patente" placeholder="AA1234 / AAAA12" [ngModelOptions]="{ standalone: true }" (input)="onPatenteChange()" />
           <button type="button" class="sigma-btn sigma-btn--outline" (click)="buscarPorPatente()" [disabled]="!patente().trim()">Buscar</button>
         </div>
       </div>
