@@ -29,6 +29,8 @@ const MENU: ItemMenu[] = [
   // Clientes: solo ADMINISTRADOR (ni MECANICO_INDEPENDIENTE ni TALLER lo ven)
   { ruta: '/clientes', etiqueta: 'Clientes', icono: '👥', roles: SOLO_ADMIN },
   { ruta: '/mantenciones', etiqueta: 'Fichas de mantención', icono: '🛠️', roles: TODOS },
+  // Inventario de Repuestos y Tuning (Taller y Admin)
+  { ruta: '/inventario', etiqueta: 'Inventario', icono: '📦', roles: TALLER_ADMIN },
   { ruta: '/alertas', etiqueta: 'Alertas', icono: '🔔', roles: TODOS },
   { ruta: '/mi-equipo', etiqueta: 'Mi Equipo', icono: '🧑‍🔧', roles: TALLER_ADMIN },
   // Perfil: CLIENTE, MECANICO_INDEPENDIENTE, ADMINISTRADOR (NO TALLER)

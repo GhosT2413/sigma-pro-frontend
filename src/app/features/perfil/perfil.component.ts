@@ -42,24 +42,10 @@ export class PerfilComponent {
 
   readonly esGoogleUser = computed(() => !!this.usuarioActual()?.googleId);
 
-  readonly edad = computed(() => {
-    const fechaNac = this.form.get('fecha_nacimiento')?.value;
-    if (!fechaNac) return null;
-    const hoy = new Date();
-    const nacimiento = new Date(fechaNac);
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const mes = hoy.getMonth() - nacimiento.getMonth();
-    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--;
-    }
-    return edad;
-  });
-
   readonly form = this.fb.nonNullable.group({
     nombre_completo: [{ value: '', disabled: true }, [Validators.required, Validators.minLength(3)]],
     email: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
     telefono: [{ value: '', disabled: true }],
-    fecha_nacimiento: [{ value: '', disabled: true }],
     rut: [{ value: '', disabled: true }, [validarRutChileno]],
   });
 
@@ -80,8 +66,8 @@ export class PerfilComponent {
         }
       });
 
-      // Si es usuario Google (o si edita), puede modificar nombre completo, rut y fecha de nacimiento
-      const controlesGoogle = ['nombre_completo', 'rut', 'fecha_nacimiento'];
+      // Si es usuario Google (o si edita), puede modificar nombre completo y rut
+      const controlesGoogle = ['nombre_completo', 'rut'];
       controlesGoogle.forEach((key) => {
         const control = this.form.get(key);
         if (control) {
@@ -99,24 +85,10 @@ export class PerfilComponent {
       return;
     }
 
-    // Formatear fecha a YYYY-MM-DD para input[type=date]
-    const formatearFecha = (fecha: string | undefined): string => {
-      if (!fecha) return '';
-      // Si ya está en formato YYYY-MM-DD, devolverlo
-      if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
-      // Intentar parsear otros formatos
-      const date = new Date(fecha);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0];
-      }
-      return '';
-    };
-
     this.form.patchValue({
       nombre_completo: usuario.nombreCompleto,
       email: usuario.email,
       telefono: usuario.telefono ?? '',
-      fecha_nacimiento: formatearFecha(usuario.fechaNacimiento),
       rut: usuario.rut ?? '',
     });
 
@@ -148,9 +120,6 @@ export class PerfilComponent {
           if (u.rut && !this.form.get('rut')?.value) {
             this.form.patchValue({ rut: u.rut });
           }
-          if (u.fechaNacimiento) {
-            this.form.patchValue({ fecha_nacimiento: formatearFecha(u.fechaNacimiento) });
-          }
           this.cargando.set(false);
         },
         error: () => this.cargando.set(false),
@@ -163,9 +132,6 @@ export class PerfilComponent {
           }
           if (propio.telefono) {
             this.form.patchValue({ telefono: propio.telefono });
-          }
-          if (propio.fechaNacimiento) {
-            this.form.patchValue({ fecha_nacimiento: formatearFecha(propio.fechaNacimiento) });
           }
           if (propio.fotoPerfilUrl) {
             this.fotoPreview.set(propio.fotoPerfilUrl);
@@ -181,9 +147,6 @@ export class PerfilComponent {
               }
               if (propio?.telefono) {
                 this.form.patchValue({ telefono: propio.telefono });
-              }
-              if (propio?.fechaNacimiento) {
-                this.form.patchValue({ fecha_nacimiento: formatearFecha(propio.fechaNacimiento) });
               }
               if (propio?.fotoPerfilUrl) {
                 this.fotoPreview.set(propio.fotoPerfilUrl);
@@ -258,9 +221,6 @@ export class PerfilComponent {
     if (raw.rut?.trim()) {
       payload.rut = raw.rut.trim().toUpperCase();
     }
-    if (raw.fecha_nacimiento) {
-      payload.fecha_nacimiento = raw.fecha_nacimiento;
-    }
 
     this.usuarioService.actualizar(usuario.id, payload).subscribe({
       next: (res) => {
@@ -269,7 +229,6 @@ export class PerfilComponent {
           nombreCompleto: res.nombre_completo || usuario.nombreCompleto,
           email: res.email,
           telefono: res.telefono,
-          fechaNacimiento: res.fecha_nacimiento,
           fotoPerfilUrl: res.foto_perfil_url,
           rut: res.rut || usuario.rut,
         };

@@ -15,7 +15,6 @@ export interface UsuarioBackend {
   nombre_completo: string;
   email: string;
   telefono?: string;
-  fecha_nacimiento?: string;
   foto_perfil_url?: string;
   rut?: string;
   google_id?: string;
@@ -42,7 +41,6 @@ export interface Usuario {
   nombreCompleto: string;
   email: string;
   telefono?: string;
-  fechaNacimiento?: string;
   fotoPerfilUrl?: string;
   activo: boolean;
   rol: Rol;
@@ -63,7 +61,6 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
     nombreCompleto: u.nombre_completo,
     email: u.email,
     telefono: u.telefono,
-    fechaNacimiento: u.fecha_nacimiento,
     fotoPerfilUrl: u.foto_perfil_url,
     activo: u.activo,
     rol: u.role?.nombre as Rol,
@@ -79,6 +76,17 @@ export function mapUsuarioBackend(u: UsuarioBackend): Usuario {
   };
 }
 
+/**
+ * Evita que se muestre un correo en interfaces donde solo debe verse el nombre.
+ * Si el valor viene vacío o contiene "@", devuelve solo la parte antes de "@" (nombre de usuario).
+ */
+export function nombreSinCorreo(nombre: string | null | undefined): string {
+  const valor = (nombre ?? '').trim();
+  if (!valor) return '';
+  if (valor.includes('@')) return valor.split('@')[0];
+  return valor;
+}
+
 /** Body exacto que espera POST /usuarios (create-usuario.dto.ts, snake_case, sin campos extra). */
 export interface CreateUsuarioPayload {
   nombre_completo: string;
@@ -86,7 +94,6 @@ export interface CreateUsuarioPayload {
   password_hash: string;
   telefono?: string;
   rut?: string;
-  fecha_nacimiento?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
   taller_id?: number;
@@ -107,7 +114,6 @@ export interface UpdateUsuarioPayload {
   email?: string;
   telefono?: string;
   rut?: string;
-  fecha_nacimiento?: string;
   foto_perfil_url?: string;
   activo?: boolean;
   role_id?: number;
@@ -146,7 +152,6 @@ export interface RegisterRequest {
   password_hash: string;
   telefono?: string;
   rut?: string;
-  fecha_nacimiento?: string;
   role_id: number;
   hasAcceptedTerms: boolean;
   taller_id?: number;
@@ -169,7 +174,6 @@ export interface RegisterResponse {
     nombre_completo: string;
     email: string;
     telefono?: string;
-    fecha_nacimiento?: string;
     foto_perfil_url?: string;
     rut?: string;
     role: {

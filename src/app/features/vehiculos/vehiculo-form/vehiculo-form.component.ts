@@ -99,10 +99,11 @@ export class VehiculoFormComponent {
   readonly cargandoRelacionados = signal(false);
   readonly guardandoAlertaId = signal<number | null>(null);
 
-  constructor() {
-    // Para clientes: NO deshabilitar el control (necesita enviarse en el submit)
-    // En el template se muestra como solo-lectura visual
+  // Campos que el Cliente NO puede modificar al editar: la identidad del
+  // vehículo (patente, marca, modelo, año) y su RUT quedan bloqueados.
+  private static readonly CAMPOS_BLOQUEADOS_CLIENTE = ['patente', 'rut', 'marca', 'modelo', 'anio'] as const;
 
+  constructor() {
     // Autorelleno inmediato del RUT con el del usuario en sesión (localStorage / perfil).
     // Si más adelante el perfil de cliente trae otro RUT, prevalece ese.
     if (this.esCliente()) {
@@ -117,6 +118,12 @@ export class VehiculoFormComponent {
     if (idParam) {
       const id = Number(idParam);
       this.vehiculoId.set(id);
+      // Al EDITAR siendo Cliente, patente/rut/marca/modelo/año quedan bloqueados.
+      // Se deshabilitan los controles (no se usan `readonly` para que tampoco
+      // sean enfocables); el submit lee getRawValue(), que sí los incluye.
+      if (this.esCliente()) {
+        this.bloquearCamposCliente();
+      }
       this.cargando.set(true);
       this.vehiculoService.obtener(id).subscribe({
         next: (v) => {
@@ -166,6 +173,13 @@ export class VehiculoFormComponent {
           }
         });
       }
+    }
+  }
+
+  /** Deshabilita en el formulario los campos que el Cliente no puede editar. */
+  private bloquearCamposCliente(): void {
+    for (const campo of VehiculoFormComponent.CAMPOS_BLOQUEADOS_CLIENTE) {
+      this.form.controls[campo].disable();
     }
   }
 

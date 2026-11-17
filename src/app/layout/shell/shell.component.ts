@@ -17,9 +17,7 @@ export class ShellComponent {
   readonly mostrarAdvertenciaGoogle = computed(() => {
     const usuario = this.auth.usuario();
     if (!usuario || !usuario.googleId) return false;
-    // Si falta el RUT o la fecha de nacimiento
-    const faltaRut = !usuario.rut || usuario.rut.trim() === '';
-    const faltaFecha = !usuario.fechaNacimiento || usuario.fechaNacimiento.trim() === '';
-    return faltaRut || faltaFecha;
+    // Si falta el RUT
+    return !usuario.rut || usuario.rut.trim() === '';
   });
 }

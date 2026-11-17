@@ -1,6 +1,6 @@
 /**
  * Ajustado a cliente.entity.ts real. OJO: tu backend NO tiene columnas de
- * region/comuna/fechaNacimiento/preferenciaNotificacion — no existen en la BD.
+ * region/comuna/preferenciaNotificacion — no existen en la BD.
  * Además ClientesController SOLO expone POST (crear). No hay GET, PATCH ni DELETE
  * todavía, así que no es posible listar ni editar clientes desde la API.
  */

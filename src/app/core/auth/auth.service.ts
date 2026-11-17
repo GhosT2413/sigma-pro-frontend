@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -15,9 +15,11 @@ import {
   Usuario,
   UsuarioBackend,
   mapUsuarioBackend,
+  nombreSinCorreo,
 } from '../models/usuario.model';
 import { ClienteService } from '../services/cliente.service';
 import { CreateClientePayload } from '../models/cliente.model';
+import { TallerService } from '../services/taller.service';
 import { UsuarioService } from '../services/usuario.service';
 import { decodeJwtPayload } from './jwt.util';
 
@@ -32,17 +34,52 @@ export class AuthService {
   readonly rol = computed<Rol | null>(() => this.usuarioSignal()?.rol ?? null);
   readonly estaAutenticado = computed(() => !!this.usuarioSignal());
 
+  /** Nombre del taller propio (rol TALLER), por si el perfil no trae la relación `taller`. */
+  private readonly nombreTallerSignal = signal<string | null>(null);
+
+  readonly esTaller = computed(() => this.rol() === 'TALLER');
+
+  /**
+   * Nombre que muestran topbar y sidebar — nunca un correo:
+   * - Rol TALLER: el nombre del taller (ej: "Tokyo Tunning").
+   * - Resto de roles: el nombre del usuario; si el dato viniera como correo,
+   *   solo la parte antes de "@" (nombre de usuario).
+   */
+  readonly nombreVisible = computed(() => {
+    const usuario = this.usuarioSignal();
+    if (!usuario) return '';
+    if (usuario.rol === 'TALLER') {
+      return usuario.taller?.nombre ?? this.nombreTallerSignal() ?? nombreSinCorreo(usuario.nombreCompleto);
+    }
+    return nombreSinCorreo(usuario.nombreCompleto);
+  });
+
   constructor(
     private readonly http: HttpClient,
     private readonly router: Router,
     private readonly clienteService: ClienteService,
     private readonly usuarioService: UsuarioService,
+    private readonly tallerService: TallerService,
   ) {
     const token = this.getToken();
     if (token) {
       // Sincronizar el perfil y rol más reciente del backend sin obligar a reloguear
       this.cargarPerfil(token).subscribe();
     }
+
+    // Rol TALLER: si el perfil no trae el nombre del taller, lo pedimos al backend.
+    effect((onCleanup) => {
+      const usuario = this.usuarioSignal();
+      if (usuario?.rol !== 'TALLER' || usuario.taller?.nombre) {
+        this.nombreTallerSignal.set(null);
+        return;
+      }
+      const suscripcion = this.tallerService.buscarPorUsuario(usuario.id).subscribe({
+        next: (taller) => this.nombreTallerSignal.set(taller?.nombre ?? null),
+        error: () => this.nombreTallerSignal.set(null),
+      });
+      onCleanup(() => suscripcion.unsubscribe());
+    });
   }
 
   login(credenciales: LoginRequest) {
@@ -65,7 +102,6 @@ export class AuthService {
     // POST /auth/register devuelve { access_token, usuario } con el objeto usuario completo.
     const esCliente = Number(datos.role_id) === 1;
     const rutIngresado = (datos as any).rut?.trim().toUpperCase();
-    const fechaNacimiento = (datos as any).fecha_nacimiento;
 
     return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register`, datos).pipe(
       tap((res) => {
@@ -76,7 +112,6 @@ export class AuthService {
           nombreCompleto: res.usuario.nombre_completo,
           email: res.usuario.email,
           telefono: res.usuario.telefono,
-          fechaNacimiento: res.usuario.fecha_nacimiento || fechaNacimiento,
           fotoPerfilUrl: res.usuario.foto_perfil_url,
           activo: true,
           rol: res.usuario.role.nombre as Rol,

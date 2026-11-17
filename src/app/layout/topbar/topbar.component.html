@@ -5,11 +5,13 @@
   @if (auth.usuario(); as usuario) {
     <div class="topbar__usuario">
       <div class="topbar__datos">
-        <strong class="topbar__nombre">{{ usuario.nombreCompleto }}</strong>
-        <span class="topbar__rol">{{ roleLabels[usuario.rol] }}</span>
+        <strong class="topbar__nombre">{{ nombreMostrado() }}</strong>
+        @if (!esTaller()) {
+          <span class="topbar__rol">{{ roleLabels[usuario.rol] }}</span>
+        }
       </div>
-      <button class="topbar__avatar-btn" (click)="toggleMenu.emit()" aria-label="Menú de usuario" title="{{ usuario.nombreCompleto }}">
-        {{ usuario.nombreCompleto.charAt(0).toUpperCase() }}
+      <button class="topbar__avatar-btn" (click)="toggleMenu.emit()" aria-label="Menú de usuario" title="{{ nombreMostrado() }}">
+        {{ (nombreMostrado() || 'U').charAt(0).toUpperCase() }}
       </button>
     </div>
   }

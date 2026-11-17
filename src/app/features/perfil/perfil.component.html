@@ -117,18 +117,6 @@
                 <input id="telefono" formControlName="telefono" placeholder="+56 9 1234 5678" />
               </div>
             </div>
-
-            <div class="perfil__campo">
-              <label for="fecha_nacimiento">📅 Fecha de nacimiento</label>
-              <div class="perfil__date-wrapper" 
-                   [class.view-mode]="!editando()" 
-                   [class.edit-mode]="editando()">
-                <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" />
-              </div>
-              @if (edad() !== null) {
-                <small class="perfil__campo-edad">Edad: {{ edad() }} años</small>
-              }
-            </div>
           </div>
 
           <div class="perfil__seccion">

@@ -155,6 +155,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/mi-equipo/mi-equipo.component').then((m) => m.MiEquipoComponent),
       },
       {
+        // Gestión de Inventario (Repuestos, Alerones, Lips, Tuning) — Taller y Administrador
+        path: 'inventario',
+        data: { roles: TALLER_ADMIN, titulo: 'Inventario de Taller' },
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/inventario/inventario.component').then((m) => m.InventarioComponent),
+      },
+      {
         // Perfil del usuario — accesible para Cliente, Mecánico Independiente y Administrador (NO TALLER)
         path: 'perfil',
         data: { roles: CLIENTE_MECANICO_ADMIN, titulo: 'Perfil' },

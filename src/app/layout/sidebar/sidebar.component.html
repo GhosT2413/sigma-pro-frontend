@@ -28,9 +28,9 @@
   <div class="sidebar__footer">
     @if (auth.usuario(); as usuario) {
       <div class="sidebar__usuario-info">
-        <div class="sidebar__usuario-avatar">{{ usuario.nombreCompleto.charAt(0).toUpperCase() }}</div>
+        <div class="sidebar__usuario-avatar">{{ (auth.nombreVisible() || 'U').charAt(0).toUpperCase() }}</div>
         <div class="sidebar__usuario-datos">
-          <strong class="sidebar__usuario-nombre">{{ usuario.nombreCompleto }}</strong>
+          <strong class="sidebar__usuario-nombre">{{ auth.nombreVisible() }}</strong>
           <span class="sidebar__usuario-rol">{{ usuario.rol }}</span>
         </div>
       </div>

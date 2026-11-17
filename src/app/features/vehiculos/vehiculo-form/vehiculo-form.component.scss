@@ -49,6 +49,15 @@
   font-size: var(--text-xs);
 }
 
+// Aviso de campos bloqueados para el rol CLIENTE al editar
+.vehiculo-form__nota-bloqueo {
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  background: var(--sigma-gray-light);
+  border-radius: var(--sigma-radius-sm);
+  color: var(--sigma-gray-medium);
+}
+
 .vehiculo-form__error-general {
   background: var(--sigma-pink-light);
   color: var(--sigma-pink-dark);

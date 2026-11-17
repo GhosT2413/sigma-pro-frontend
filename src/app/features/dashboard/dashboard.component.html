@@ -2,7 +2,7 @@
   @if (esCliente()) {
     <sigma-inicio-cliente />
   } @else {
-    @if (auth.usuario(); as usuario) {
+    @if (!esTaller() && auth.usuario(); as usuario) {
       <h2>Hola, {{ usuario.nombreCompleto.split(' ')[0] }} 👋</h2>
       <p class="dashboard__subtitulo">Vista de {{ roleLabels[usuario.rol] }}</p>
     }

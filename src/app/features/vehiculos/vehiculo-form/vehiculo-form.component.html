@@ -10,6 +10,11 @@
       ✓ {{ mensajeExito() }} Redirigiendo a vehículos…
     </div>
     }
+    @if (esCliente() && vehiculoId()) {
+    <p class="vehiculo-form__nota-campo vehiculo-form__nota-bloqueo">
+      🔒 Patente, RUT, marca, modelo y año están bloqueados: son datos verificados por el taller.
+    </p>
+    }
     <div class="sigma-form-field">
       <label for="cliente_id">Cliente propietario</label>
       @if (!esCliente()) {

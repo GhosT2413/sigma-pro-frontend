@@ -40,7 +40,7 @@ const PRIVACIDAD_TEXT = `
 <p>Tu privacidad nos importa. En simple:</p>
 
 <h3>1. Qué datos guardamos</h3>
-<p>Nombre, correo, teléfono, RUT, fecha de nacimiento, datos de tu vehículo y, según tu rol, documentos como cédula, certificado de antecedentes o datos del taller. Nunca te pediremos datos innecesarios.</p>
+<p>Nombre, correo, teléfono, RUT, datos de tu vehículo y, según tu rol, documentos como cédula, certificado de antecedentes o datos del taller. Nunca te pediremos datos innecesarios.</p>
 
 <h3>2. Para qué los usamos</h3>
 <p>Solo para crear tu cuenta, verificar tu identidad, gestionar tus vehículos y mantenciones, enviarte alertas importantes y mejorar el servicio.</p>

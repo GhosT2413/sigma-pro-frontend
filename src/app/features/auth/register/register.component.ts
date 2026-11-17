@@ -38,25 +38,6 @@ export class RegisterComponent {
     hasAcceptedTerms: [false, Validators.requiredTrue],
     // Cliente fields
     rut: ['', [Validators.required, validarRutChileno]],
-    fecha_nacimiento: ['', [Validators.required]],
-  });
-
-  readonly edad = computed(() => {
-    const fechaNac = this.form.get('fecha_nacimiento')?.value;
-    if (!fechaNac) return null;
-    const hoy = new Date();
-    const nacimiento = new Date(fechaNac);
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const mes = hoy.getMonth() - nacimiento.getMonth();
-    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--;
-    }
-    return edad;
-  });
-
-  readonly mayorDeEdad = computed(() => {
-    const e = this.edad();
-    return e !== null && e >= 17;
   });
 
   async abrirTerminos(): Promise<void> {
@@ -88,7 +69,6 @@ export class RegisterComponent {
       role_id: 1,
       hasAcceptedTerms: raw.hasAcceptedTerms,
       rut: raw.rut?.trim().toUpperCase(),
-      fecha_nacimiento: raw.fecha_nacimiento,
     };
 
     this.auth.register(payload as any).subscribe({

@@ -1,0 +1,404 @@
+<div class="inventario-page">
+  <!-- Cabecera principal -->
+  <header class="inventario-header">
+    <div class="inventario-header__info">
+      <div class="inventario-header__badge">
+        <span class="pulse-dot"></span> Módulo Taller & Performance
+      </div>
+      <h1 class="inventario-header__titulo">Inventario de Repuestos & Tuning</h1>
+      <p class="inventario-header__subtitulo">
+        Control de stock, repuestos de mantención, partes aerodinámicas (alerones, lips, faldones) y componentes de alto rendimiento.
+      </p>
+    </div>
+    <div class="inventario-header__acciones">
+      <button class="btn-sigma-ghost" (click)="restablecerDemo()" title="Restablecer datos de muestra">
+        🔄 Demo
+      </button>
+      <button class="btn-sigma-primary" (click)="abrirCrear()">
+        <span class="icon-plus">+</span> Nuevo Repuesto / Accesorio
+      </button>
+    </div>
+  </header>
+
+  <!-- Tarjetas de Métricas Estadísticas -->
+  <section class="metricas-grid">
+    <div class="metrica-card metrica-card--total">
+      <div class="metrica-card__icono">📦</div>
+      <div class="metrica-card__contenido">
+        <span class="metrica-card__valor">{{ metricas().totalArticulos }}</span>
+        <span class="metrica-card__label">Artículos Registrados</span>
+        <small class="metrica-card__sub">{{ metricas().stockTotalUnidades }} unidades en almacén</small>
+      </div>
+    </div>
+
+    <div class="metrica-card metrica-card--aero">
+      <div class="metrica-card__icono">🏎️</div>
+      <div class="metrica-card__contenido">
+        <span class="metrica-card__valor">{{ metricas().aeroCount }}</span>
+        <span class="metrica-card__label">Aerodinámica & Tuning</span>
+        <small class="metrica-card__sub">Alerones, lips, splitters</small>
+      </div>
+    </div>
+
+    <div class="metrica-card metrica-card--alerta" [class.metrica-card--alerta-activa]="metricas().bajoStock > 0">
+      <div class="metrica-card__icono">⚠️</div>
+      <div class="metrica-card__contenido">
+        <span class="metrica-card__valor">{{ metricas().bajoStock }}</span>
+        <span class="metrica-card__label">Stock Bajo</span>
+        <small class="metrica-card__sub">Por debajo del umbral mínimo</small>
+      </div>
+    </div>
+
+    <div class="metrica-card metrica-card--valor">
+      <div class="metrica-card__icono">💰</div>
+      <div class="metrica-card__contenido">
+        <span class="metrica-card__valor">${{ metricas().valorTotalInventario | number: '1.0-0' }}</span>
+        <span class="metrica-card__label">Valor Total en Bodega</span>
+        <small class="metrica-card__sub">Costo valorizado de stock</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- Barra de Filtros y Control de Vista -->
+  <section class="filtros-bar">
+    <div class="filtros-bar__search">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        [ngModel]="busqueda()" 
+        (ngModelChange)="busqueda.set($event)"
+        placeholder="Buscar por alerón, lip, SKU, modelo, vehículo compatible..." 
+      />
+      @if (busqueda()) {
+        <button class="search-clear" (click)="busqueda.set('')">✕</button>
+      }
+    </div>
+
+    <div class="filtros-bar__group">
+      <select [ngModel]="categoriaFiltro()" (ngModelChange)="categoriaFiltro.set($event)">
+        <option value="TODAS">Todas las categorías</option>
+        <option value="AERODINAMICA">🏎️ Aerodinámica (Alerones/Lips)</option>
+        <option value="REPUESTOS">🔧 Repuestos de Mantención</option>
+        <option value="SUSPENSION_FRENOS">🛑 Frenos y Suspensión</option>
+        <option value="MOTOR_ESCAPE">⚡ Motor, Admisión y Escape</option>
+        <option value="ILUMINACION">💡 Iluminación y Ópticas</option>
+        <option value="INTERIOR_ACCESORIOS">💺 Interior y Accesorios</option>
+      </select>
+
+      <select [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)">
+        <option value="TODOS">Todos los estados</option>
+        <option value="DISPONIBLE">🟢 Disponible</option>
+        <option value="BAJO_STOCK">🟠 Bajo Stock</option>
+        <option value="AGOTADO">🔴 Agotado</option>
+      </select>
+
+      <div class="vista-toggle">
+        <button 
+          [class.active]="vistaModo() === 'cuadricula'" 
+          (click)="vistaModo.set('cuadricula')"
+          title="Vista en Cuadrícula">
+          ⊞ Cards
+        </button>
+        <button 
+          [class.active]="vistaModo() === 'tabla'" 
+          (click)="vistaModo.set('tabla')"
+          title="Vista en Tabla">
+          ☰ Tabla
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Listado en Cuadrícula (Cards modernas visuales) -->
+  @if (vistaModo() === 'cuadricula') {
+    <div class="articulos-grid">
+      @for (item of itemsFiltrados(); track item.id) {
+        <article class="articulo-card" [class.articulo-card--agotado]="item.stockActual === 0">
+          <div class="articulo-card__header">
+            <span class="articulo-card__icon-badge">{{ item.imagenIcono || '📦' }}</span>
+            <div class="articulo-card__tags">
+              <span class="badge-cat">{{ item.categoria }}</span>
+              <span 
+                class="badge-estado"
+                [class.badge-estado--ok]="item.estado === 'DISPONIBLE'"
+                [class.badge-estado--warn]="item.estado === 'BAJO_STOCK'"
+                [class.badge-estado--danger]="item.estado === 'AGOTADO'">
+                {{ item.estado === 'DISPONIBLE' ? 'Disponible' : item.estado === 'BAJO_STOCK' ? 'Bajo Stock' : 'Agotado' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="articulo-card__body">
+            <div class="articulo-card__sku">{{ item.codigoSku }}</div>
+            <h3 class="articulo-card__nombre">{{ item.nombre }}</h3>
+            <p class="articulo-card__desc">{{ item.descripcion }}</p>
+
+            <div class="articulo-card__meta">
+              <div class="meta-row">
+                <span class="meta-label">Compatibilidad:</span>
+                <span class="meta-val meta-val--highlight">{{ item.compatibilidad }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Ubicación:</span>
+                <span class="meta-val">📍 {{ item.ubicacion }}</span>
+              </div>
+            </div>
+
+            <!-- Contador de Stock con acciones rápidas +/- -->
+            <div class="stock-manager">
+              <div class="stock-manager__info">
+                <span class="stock-manager__label">Stock actual:</span>
+                <span class="stock-manager__count" [class.text-danger]="item.stockActual === 0" [class.text-warn]="item.stockActual <= item.stockMinimo && item.stockActual > 0">
+                  {{ item.stockActual }} un.
+                </span>
+                <span class="stock-manager__min">(Mín: {{ item.stockMinimo }})</span>
+              </div>
+              <div class="stock-manager__stepper">
+                <button 
+                  class="btn-step" 
+                  [disabled]="item.stockActual === 0" 
+                  (click)="restarStock(item, $event)" 
+                  title="Restar 1">-</button>
+                <button 
+                  class="btn-step" 
+                  (click)="sumarStock(item, $event)" 
+                  title="Sumar 1">+</button>
+                <button 
+                  class="btn-step btn-step--adjust" 
+                  (click)="abrirAjusteRapido(item)" 
+                  title="Ajuste de lote">⚡</button>
+              </div>
+            </div>
+
+            <div class="articulo-card__precio-row">
+              <div class="precio-box">
+                <span class="precio-label">Precio Unitario</span>
+                <span class="precio-valor">${{ item.precioUnitario | number: '1.0-0' }}</span>
+              </div>
+              <div class="subtotal-box">
+                <span class="subtotal-label">En Stock</span>
+                <span class="subtotal-valor">${{ (item.precioUnitario * item.stockActual) | number: '1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="articulo-card__footer">
+            <button class="btn-card-action btn-card-action--edit" (click)="abrirEditar(item)">
+              ✏️ Editar
+            </button>
+            <button class="btn-card-action btn-card-action--delete" (click)="eliminar(item)">
+              🗑️
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-state">
+          <div class="empty-state__icon">🔍</div>
+          <h3>No se encontraron repuestos o piezas</h3>
+          <p>Intenta ajustar tus criterios de búsqueda o agrega un nuevo artículo al catálogo.</p>
+          <button class="btn-sigma-primary" (click)="abrirCrear()">+ Agregar Nuevo Ítem</button>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Listado en Modo Tabla -->
+    <div class="tabla-container">
+      <table class="tabla-inventario">
+        <thead>
+          <tr>
+            <th>Ítem / Pieza</th>
+            <th>SKU</th>
+            <th>Categoría</th>
+            <th>Compatibilidad</th>
+            <th>Ubicación</th>
+            <th>Stock</th>
+            <th>Precio Unitario</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itemsFiltrados(); track item.id) {
+            <tr>
+              <td>
+                <div class="tabla-item-cell">
+                  <span class="tabla-item-icon">{{ item.imagenIcono || '📦' }}</span>
+                  <div>
+                    <strong>{{ item.nombre }}</strong>
+                    <small>{{ item.descripcion }}</small>
+                  </div>
+                </div>
+              </td>
+              <td><code>{{ item.codigoSku }}</code></td>
+              <td><span class="badge-cat">{{ item.categoria }}</span></td>
+              <td><span class="meta-val--highlight">{{ item.compatibilidad }}</span></td>
+              <td>📍 {{ item.ubicacion }}</td>
+              <td>
+                <div class="stock-inline">
+                  <button class="btn-mini" [disabled]="item.stockActual === 0" (click)="restarStock(item)">-</button>
+                  <strong [class.text-danger]="item.stockActual === 0">{{ item.stockActual }}</strong>
+                  <button class="btn-mini" (click)="sumarStock(item)">+</button>
+                  <small>(Mín: {{ item.stockMinimo }})</small>
+                </div>
+              </td>
+              <td><strong>${{ item.precioUnitario | number: '1.0-0' }}</strong></td>
+              <td>
+                <span 
+                  class="badge-estado"
+                  [class.badge-estado--ok]="item.estado === 'DISPONIBLE'"
+                  [class.badge-estado--warn]="item.estado === 'BAJO_STOCK'"
+                  [class.badge-estado--danger]="item.estado === 'AGOTADO'">
+                  {{ item.estado }}
+                </span>
+              </td>
+              <td>
+                <div class="tabla-acciones">
+                  <button class="btn-mini btn-mini--edit" (click)="abrirEditar(item)" title="Editar">✏️</button>
+                  <button class="btn-mini btn-mini--del" (click)="eliminar(item)" title="Eliminar">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="tabla-vacia">No hay piezas coincidentes.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- MODAL CREAR / EDITAR PIEZA -->
+@if (modalAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editandoItem() ? 'Editar Artículo de Inventario' : 'Registrar Nuevo Repuesto / Accesorio Tuning' }}</h2>
+        <button class="btn-close" (click)="cerrarModal()">✕</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form">
+        <div class="form-grid">
+          <div class="form-group col-span-2">
+            <label>Nombre de la Pieza / Accesorio *</label>
+            <input 
+              type="text" 
+              formControlName="nombre" 
+              placeholder="Ej: Front Lip Splitter Maxton Style / Alerón Spoiler GT" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Código SKU / Referencia *</label>
+            <input type="text" formControlName="codigoSku" placeholder="Ej: AER-LIP-015" />
+          </div>
+
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select formControlName="categoria" (change)="onCategoriaSelect($event)">
+              @for (cat of categorias; track cat.id) {
+                <option [value]="cat.id">{{ cat.icono }} {{ cat.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Compatibilidad / Aplicación *</label>
+            <input 
+              type="text" 
+              formControlName="compatibilidad" 
+              placeholder="Ej: Universal / Subaru WRX 2015-2021" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Ubicación en Taller / Bodega *</label>
+            <input 
+              type="text" 
+              formControlName="ubicacion" 
+              placeholder="Ej: Vitrina 2 / Pasillo B Estante 4" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Stock Actual (unidades) *</label>
+            <input type="number" formControlName="stockActual" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Stock Mínimo (Alerta umbral) *</label>
+            <input type="number" formControlName="stockMinimo" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Precio Unitario ($ CLP) *</label>
+            <input type="number" formControlName="precioUnitario" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Emoji / Ícono representativo</label>
+            <input type="text" formControlName="imagenIcono" placeholder="🏎️, ⚡, 🔧, 💡" />
+          </div>
+
+          <div class="form-group col-span-2">
+            <label>Descripción detallada & Materiales *</label>
+            <textarea 
+              rows="3" 
+              formControlName="descripcion" 
+              placeholder="Detalles de instalación, material (fibra de carbono, ABS, aluminio), acabado...">
+            </textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-sigma-ghost" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-sigma-primary" [disabled]="form.invalid">
+            {{ editandoItem() ? 'Guardar Cambios' : 'Registrar en Inventario' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL AJUSTE RÁPIDO DE LOTE -->
+@if (modalStockAbierto() && itemStockSeleccionado(); as item) {
+  <div class="modal-overlay" (click)="cerrarModalStock()">
+    <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Ajuste Rápido de Stock</h3>
+        <button class="btn-close" (click)="cerrarModalStock()">✕</button>
+      </div>
+      <div class="modal-stock-body">
+        <p><strong>{{ item.nombre }}</strong></p>
+        <p class="text-muted">Stock actual: <span class="highlight">{{ item.stockActual }} un.</span></p>
+
+        <div class="stock-input-box">
+          <label>Cantidad a ajustar:</label>
+          <input 
+            type="number" 
+            min="1" 
+            [ngModel]="deltaStock()" 
+            (ngModelChange)="deltaStock.set($event)" 
+          />
+        </div>
+
+        <div class="stock-actions-grid">
+          <button 
+            class="btn-sigma-danger" 
+            [disabled]="item.stockActual < deltaStock()"
+            (click)="aplicarAjusteStock(false)">
+            - Salida / Venta (-{{ deltaStock() }})
+          </button>
+          <button 
+            class="btn-sigma-primary" 
+            (click)="aplicarAjusteStock(true)">
+            + Entrada / Compra (+{{ deltaStock() }})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

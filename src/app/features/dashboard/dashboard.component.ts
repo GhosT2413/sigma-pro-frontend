@@ -21,6 +21,7 @@ export class DashboardComponent {
 
   readonly roleLabels = ROLE_LABELS;
   readonly esCliente = computed(() => this.auth.rol() === 'CLIENTE');
+  readonly esTaller = computed(() => this.auth.rol() === 'TALLER');
   readonly metricas = signal<DashboardMetricas | null>(null);
   readonly cargando = signal(true);
 

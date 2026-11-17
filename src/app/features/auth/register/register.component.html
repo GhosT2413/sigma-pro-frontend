@@ -43,24 +43,6 @@
       }
     </div>
 
-    <div class="register__cliente-campos">
-      <div class="sigma-form-field">
-        <label for="fecha_nacimiento">Fecha de nacimiento <span class="requerido">*</span></label>
-        <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento" autocomplete="bday" />
-        @if (form.controls.fecha_nacimiento.touched && form.controls.fecha_nacimiento.invalid) {
-          <small class="register__error-campo">La fecha de nacimiento es obligatoria.</small>
-        }
-        @if (edad() !== null) {
-          <small class="register__edad" [class.register__edad--menor]="!mayorDeEdad()">
-            Edad: {{ edad() }} años
-            @if (!mayorDeEdad()) {
-              <span class="register__edad-alerta"> — Debes tener 17 años o más</span>
-            }
-          </small>
-        }
-      </div>
-    </div>
-
     <div class="register__terms">
       <label class="register__checkbox">
         <input type="checkbox" formControlName="hasAcceptedTerms" />
